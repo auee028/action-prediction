@@ -25,7 +25,7 @@ MarkupSafe==1.1.0
 mock==2.0.0
 mss==4.0.3
 natsort==5.5.0
-numpy==1.15.4
+#numpy==1.15.4
 opencv-python==3.4.4.19
 pafy==0.5.4
 pathlib2==2.3.3
