@@ -129,6 +129,7 @@ if __name__ == '__main__':
 
                     if motion_detect and (frame_num >= start_frame + args.action_video_length):
                         result, confidence, top_3 = pred_action(frames[-args.action_video_length:], frame_num)
+                        print(result)
                         cv2.putText(display_frame, str(result), (100, 50), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255, 2))
                         event_end_frame = frame_num
 
