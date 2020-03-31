@@ -55,8 +55,8 @@ if __name__ == '__main__':
 
     # cap = cv2.VideoCapture('sample/200205/2020-02-05-17-49-01_00_415.avi')
     # cap = cv2.VideoCapture('/home/wonhee/event_detector/sample/200206/demo_samples/2020-02-06/10_reading-blowing nose-reading-blowing nose-reading-blowing nose/2020-02-06-15-01-50_00_1024.avi')
-    cap = cv2.VideoCapture(args.cam)
-    # cap = cv2.VideoCapture('sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
+    # cap = cv2.VideoCapture(args.cam)
+    cap = cv2.VideoCapture('sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
     cap.set(3, args.width)
     cap.set(4, args.height)
     cap.set(5, args.fps)
@@ -79,6 +79,8 @@ if __name__ == '__main__':
         prev_time = time.time()
 
         ret, frame = cap.read()
+        if not ret:
+            break
 
         display_frame = copy.deepcopy(frame)
         display_frame = cv2.resize(display_frame, (224, 224))
