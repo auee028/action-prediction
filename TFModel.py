@@ -18,7 +18,7 @@ ix2label = dict(zip(range(len(lines)), lines))
 
 cwd = os.getcwd()
 # model_path = os.path.join('save_model', 'i3d-ABR_action-finetune')
-model_path = os.path.join('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector', 'save_model', 'i3d-ABR_action-finetune/step-119/200209')
+model_path = os.path.join('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector', 'save_model', 'i3d_ABR_action-finetune')    # /step-119/200209
 
 class TFModel:
     def __init__(self):
@@ -48,12 +48,13 @@ class TFModel:
 
         saver = tf.train.Saver()
 
-        # ckpt = tf.train.latest_checkpoint(model_path)
-        ckpt = tf.train.get_checkpoint_state(model_path)
-
-        if ckpt:
-            print('restore from {}...'.format(ckpt))
-            saver.restore(self.sess, ckpt)
+        ckpt = tf.train.latest_checkpoint(model_path)
+        # ckpt = tf.train.get_checkpoint_state(model_path)
+        print('restore from {}...'.format(ckpt))
+        saver.restore(self.sess, ckpt)
+        # if ckpt:
+        #     print('restore from {}...'.format(ckpt))
+        #     saver.restore(self.sess, ckpt)
 
     def run_demo_wrapper(self, frames):
         summary, predictions, softmax = self.sess.run([self.merge_op, self.pred, self.softmax],
