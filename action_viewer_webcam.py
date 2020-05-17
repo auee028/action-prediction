@@ -81,20 +81,20 @@ if __name__ == '__main__':
     # cap = cv2.VideoCapture('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/sample/200205/2020-02-05-17-49-01_00_415.avi')
     # cap = cv2.VideoCapture('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/sample/200206/demo_samples/2020-02-06/10_reading-blowing nose-reading-blowing nose-reading-blowing nose/2020-02-06-15-01-50_00_1024.avi')
     # cap = cv2.VideoCapture(args.cam)
-    cap = cv2.VideoCapture('sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
+    # cap = cv2.VideoCapture('sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
     # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/youtube/drama_0002.mp4')
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0109/Amin/1/2020-01-09-15-21-07_00_84.avi')    # sitting
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0110/Juhee/9/2020-01-10-17-11-05_00_99.avi')   # coming
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0110/Juhee/4/2020-01-09-17-27-09_00_99.avi')     # reading
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0113/jeongwoo/12/2020-01-10-18-15-12_00_86.avi')
-    # cap = cv2.VideoCapture('/home/pjh/Videos/test_vid.avi')
+    cap = cv2.VideoCapture('/home/pjh/Videos/test_vid.avi')
     cap.set(3, args.width)
     cap.set(4, args.height)
     cap.set(5, args.fps)
 
-    # to save the video result
-    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-    out = cv2.VideoWriter('/home/pjh/Videos/test-demoseq.avi', fourcc, 25.0, (640, 480))
+    # # to save the video result
+    # fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
+    # writer = cv2.VideoWriter('/home/pjh/Videos/test-arbitrary.avi', fourcc, 30.0, (args.width, args.height))
 
     frames = []
     sampled_frames = []
@@ -190,7 +190,10 @@ if __name__ == '__main__':
                             print('total frames : {}'.format(len(frames[start_frame:])))
 
                             sampled_frames = sampling_frames(frames[start_frame:], args.action_video_length)
-                            # for f in sampled_frames:
+                            for num, f in enumerate(sampled_frames):
+                                if not os.path.exists('/home/pjh/Videos/test-arbitrary_parts/{}'.format(len(action_list))):
+                                    os.makedirs('/home/pjh/Videos/test-arbitrary_parts/{}'.format(len(action_list)))
+                                cv2.imwrite('/home/pjh/Videos/test-arbitrary_parts/{}/{}.jpg'.format(len(action_list), num), f)
                             #     # cv2.imshow('frame', frames[-(args.action_video_length-i)])
                             #     cv2.imshow('frame', f)
                             #     cv2.waitKey(300)
@@ -204,7 +207,7 @@ if __name__ == '__main__':
 
                             action_time = time.time()  # reset action_time
 
-                            if result != None:
+                            if True:#result != None:
                                 # action_end_frame = frame_num
                                 action_list.append(result)
 
@@ -229,7 +232,8 @@ if __name__ == '__main__':
 
         cv2.imshow('frame', display_frame)
         cv2.waitKey(50)
-        out.write(display_frame)
+        # writer.write(display_frame)
+        cv2.imwrite('/home/pjh/Videos/test-arbitrary_frames/{}.jpg'.format(frame_num), display_frame)
 
         # print(time.time() - prev_time)
         frame_num = frame_num + 1
@@ -243,6 +247,7 @@ if __name__ == '__main__':
             break
 
     cap.release()
+    # writer.release()
     cv2.destroyAllWindows()
 
     print('action list: {}\n'.format(action_list))

@@ -22,13 +22,13 @@ def get_frames(videos, n_frames, channel = 0):
 
 
 def get_frames_data(dirname):
-    ''' Given a directory containing extracted frames, return a video clip of
+    ''' Given a directory containing extracted(sampled) frames, return a video clip of
     (num_frames_per_clip) consecutive frames as a list of np arrays '''
     ret_arr = []
 
     filenames = natsorted(os.listdir(dirname))
 
-    is_color = np.random.binomial(1, 0.5)
+    is_color = cv2.IMREAD_COLOR # np.random.binomial(1, 0.5)
 
     for filename in filenames:
         image_name = str(dirname) + '/' + str(filename)
