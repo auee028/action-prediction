@@ -2,9 +2,12 @@
 
 ## Dependencies
 * python 2.7
-* tensorflow-gpu 1.4.0
 * CUDA 8.0, cuDNN 6.0
 
+## Packages
+* tensorflow-gpu 1.4.0
+* numpy==1.16.2
+* opencv-python==3.4.4.19
 
 ## Dataset
 * STAIR dataset
@@ -41,3 +44,4 @@ train_script.py
 
 ## Test(including real-time)
 action_viewer_webcam.py
+
