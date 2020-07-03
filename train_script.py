@@ -14,7 +14,7 @@ from tensorflow.python import debug as tf_debug
 # configuration
 # example: --which=jester --video_root_path=/home/wonhee/2-dataset --batch_size=8
 tf.app.flags.DEFINE_integer("batch_size", 4, "batch size") # 8
-tf.app.flags.DEFINE_float("learning_rate", 1e-3, "learning rate")
+tf.app.flags.DEFINE_float("learning_rate", 1e-5, "learning rate")
 
 tf.app.flags.DEFINE_integer("k_fold", 5, "data ratio")
 tf.app.flags.DEFINE_bool("enable_k_fold", True, "enable k fold")
@@ -24,7 +24,7 @@ tf.app.flags.DEFINE_string("model", 'i3d', "which model to use")      # resnetl1
 # tf.app.flags.DEFINE_string("video_root_path", '/media/pjh/HDD2/Dataset/STAIR-actions-master/STAIR_Actions_v1.1-25frames', "video root path")
 tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug"], "video root path")
 # tf.app.flags.DEFINE_string("which", 'STAIR', "which annotation to use")
-tf.app.flags.DEFINE_string("which", 'ABR_action_augmented-{}'.format(1), "which annotation to use")
+tf.app.flags.DEFINE_string("which", 'ABR_action_augmented-{}'.format(2), "which annotation to use")
 
 tf.app.flags.DEFINE_string("log_dir", '/home/pjh/PycharmProjects/action-prediction/tensorboard', 'loss log directory for tensorboard')
 
@@ -54,6 +54,8 @@ print('model_path: ', model_path)
 if not os.path.exists(model_path):
     os.makedirs(model_path)
 """
+saved_path = '/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/save_model/i3d_ABR_action-finetune'
+
 # model_path = '/media/pjh/HDD2/Dataset/save_model/i3d-STAIR-finetune'
 model_root = '/media/pjh/HDD2/Dataset'
 model_path = os.path.join(model_root, 'save_model', FLAGS.model+'-'+FLAGS.which)
@@ -181,7 +183,7 @@ if hasattr(net, 'assign_ops'):
 
 saver = tf.train.Saver(max_to_keep=20)
 
-ckpt = tf.train.latest_checkpoint(model_path)
+ckpt = tf.train.latest_checkpoint(saved_path)
 
 summary_writer = tf.summary.FileWriter(FLAGS.log_dir, sess.graph)
 
@@ -189,7 +191,8 @@ if ckpt:
     print( 'restore from {}...'.format(ckpt))
     saver.restore(sess, ckpt)
 
-start = -1 if not ckpt else int(os.path.basename(ckpt).split('-')[-1])
+# start = -1 if not ckpt else int(os.path.basename(ckpt).split('-')[-1])
+start = -1
 epochs = 120
 
 crossval_flag = 0
