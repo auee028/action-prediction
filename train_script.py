@@ -14,7 +14,7 @@ from tensorflow.python import debug as tf_debug
 # configuration
 # example: --which=jester --video_root_path=/home/wonhee/2-dataset --batch_size=8
 tf.app.flags.DEFINE_integer("batch_size", 4, "batch size") # 8
-tf.app.flags.DEFINE_float("learning_rate", 1e-5, "learning rate")
+tf.app.flags.DEFINE_float("learning_rate", 1e-1, "learning rate")
 
 tf.app.flags.DEFINE_integer("k_fold", 5, "data ratio")
 tf.app.flags.DEFINE_bool("enable_k_fold", True, "enable k fold")
@@ -22,9 +22,10 @@ tf.app.flags.DEFINE_bool("enable_k_fold", True, "enable k fold")
 tf.app.flags.DEFINE_string("model", 'i3d', "which model to use")      # resnetl10/i3d
 
 # tf.app.flags.DEFINE_string("video_root_path", '/media/pjh/HDD2/Dataset/STAIR-actions-master/STAIR_Actions_v1.1-25frames', "video root path")
-tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug"], "video root path")
+# tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug"], "video root path")
+tf.app.flags.DEFINE_string("video_root_path", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug", "video root path")
 # tf.app.flags.DEFINE_string("which", 'STAIR', "which annotation to use")
-tf.app.flags.DEFINE_string("which", 'ABR_action_augmented-{}'.format(2), "which annotation to use")
+tf.app.flags.DEFINE_string("which", 'ABR_action_augmented-{}'.format(4), "which annotation to use")
 
 tf.app.flags.DEFINE_string("log_dir", '/home/pjh/PycharmProjects/action-prediction/tensorboard', 'loss log directory for tensorboard')
 
@@ -73,10 +74,11 @@ if not os.path.exists(os.path.join(cwd, 'analysis')):
 if FLAGS.enable_k_fold:
     # train_text_path = os.path.join(cwd, 'annotation/trainlist-{}.txt'.format(FLAGS.which))
     # print(train_text_path, video_root_path)
-    train_text_path = ["annotation/trainlist-ABR_action.txt", "annotation/trainlist-ABR_action-aug.txt"]
+    # train_text_path = ["annotation/trainlist-ABR_action.txt", "annotation/trainlist-ABR_action-aug.txt"]
+    train_text_path = "annotation/trainlist-ABR_action-aug.txt"
 
-    # videos, intention_data, n_class = sf.get_HRI(video_root_path, train_text_path)
-    videos, intention_data, n_class = sf.get_HRI_v2(video_root_path, train_text_path)
+    videos, intention_data, n_class = sf.get_HRI(video_root_path, train_text_path)
+    # videos, intention_data, n_class = sf.get_HRI_v2(video_root_path, train_text_path)
 
     # load and shuffle data
     index = np.arange(len(videos))
@@ -153,13 +155,13 @@ global_step = tf.Variable(0, trainable=False)
 
 starter_learning_rate = FLAGS.learning_rate
 
+# learning_rate = tf.train.exponential_decay(starter_learning_rate,global_step,decay_steps=len(train_videos)*5,decay_rate=0.1,staircase=True,name='Learning_rate')
 learning_rate = tf.train.exponential_decay(starter_learning_rate,
                                                      global_step,
                                                      decay_steps=len(train_videos)*5,
                                                      decay_rate=0.1,
                                                      staircase=True,
-                                                     name='Learning_rate')
-
+                                                     name='Learning_rate')  # 30 epochs expected. 10^-3=>10^-5
 
 update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
