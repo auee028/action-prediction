@@ -25,7 +25,7 @@ tf.app.flags.DEFINE_string("model", 'i3d', "which model to use")      # resnetl1
 # tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug"], "video root path")
 tf.app.flags.DEFINE_string("video_root_path", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug", "video root path")
 # tf.app.flags.DEFINE_string("which", 'STAIR', "which annotation to use")
-tf.app.flags.DEFINE_string("which", 'ABR_action_augmented-{}'.format(4), "which annotation to use")
+tf.app.flags.DEFINE_string("which", 'ABR_action_augmented-{}'.format(5), "which annotation to use")
 
 tf.app.flags.DEFINE_string("log_dir", '/home/pjh/PycharmProjects/action-prediction/tensorboard', 'loss log directory for tensorboard')
 
@@ -183,7 +183,8 @@ if hasattr(net, 'assign_ops'):
     # init all variables with pre-trained c3d
     sess.run(net.assign_ops)
 
-saver = tf.train.Saver(max_to_keep=20)
+# saver = tf.train.Saver(max_to_keep=20)
+saver = tf.train.Saver()
 
 ckpt = tf.train.latest_checkpoint(saved_path)
 
