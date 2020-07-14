@@ -18,7 +18,8 @@ ix2label = dict(zip(range(len(lines)), lines))
 
 cwd = os.getcwd()
 # model_path = os.path.join('save_model', 'i3d_ABR_action-finetune')
-model_path = os.path.join('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector', 'save_model', 'i3d_ABR_action-finetune')    # /step-119/200209
+# model_path = os.path.join('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector', 'save_model', 'i3d_ABR_action-finetune')    # /step-119/200209
+model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', '')
 
 class TFModel:
     def __init__(self):
