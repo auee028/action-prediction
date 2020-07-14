@@ -44,4 +44,7 @@ train_script.py
 
 ## Test(including real-time)
 action_viewer_webcam.py
+action_viewer_webcam-cropped.py
 
+## Data augmentation(to crop frames)
+data_aug_2.py
