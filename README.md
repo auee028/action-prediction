@@ -8,6 +8,10 @@
 * tensorflow-gpu 1.4.0
 * numpy==1.16.2
 * opencv-python==3.4.4.19
+* requests==2.24.0
+* natsort==6.2.1
+* pillow==6.2.2
+* stn==1.0.1
 
 ## Dataset
 * STAIR dataset
