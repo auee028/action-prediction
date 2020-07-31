@@ -5,13 +5,14 @@
 * CUDA 8.0, cuDNN 6.0
 
 ## Packages
-* tensorflow-gpu 1.4.0
+* tensorflow-gpu==1.4.0
 * numpy==1.16.2
 * opencv-python==3.4.4.19
 * requests==2.24.0
 * natsort==6.2.1
 * pillow==6.2.2
 * stn==1.0.1
+* Flask==1.0.2
 
 ## Dataset
 * STAIR dataset
