@@ -1,0 +1,7 @@
+/sample
+/tensorboard
+/analysis
+/__pychche__
+/data_aug_log
+*.avi
+*.pyc
