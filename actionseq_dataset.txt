@@ -1,0 +1,10 @@
+coming,sitting,reading,nodding off	drinking
+sitting,waving a hand	reading
+nodding off	stretching
+reading,reading,reading	stretching
+nodding off,reading,nodding off	drinking
+reading,talking on the phone,standing	leaving
+reading,reading,stretching	drinking
+blow nose,reading,blow nose,standing	leaving
+drinking,drinking,standing	leaving
+waving a hand,standing	leaving

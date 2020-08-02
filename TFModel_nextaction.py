@@ -1,0 +1,194 @@
+# -*- coding: utf-8 -*-
+import tensorflow as tf
+import numpy as np
+import cv2
+import copy
+
+import model_zoo
+
+import argparse
+
+import os
+import requests
+
+with open('categories.txt') as f:
+    lines = map(lambda x: x.strip(), f.readlines())
+
+ix2label = dict(zip(range(len(lines)), lines))
+
+cwd = os.getcwd()
+# model_path = os.path.join('save_model', 'i3d_ABR_action-finetune')
+# model_path = os.path.join('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector', 'save_model', 'i3d_ABR_action-finetune')    # /step-119/200209
+# model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', 'i3d-ABR_action_augmented-{}'.format(5))
+# model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model/wonhee-train')
+# model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', 'i3d-ABR_action_augmented-{}'.format(4))
+ckpt_num = 24
+
+class I3DClassifier:
+    def __init__(self, model_path=os.path.join('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector', 'save_model', 'i3d_ABR_action-finetune')):
+        self.model_path = model_path
+
+        self.inputs = tf.placeholder(dtype=tf.float32, shape=[None, None, 224, 224, 3])
+        self.is_training = tf.placeholder(dtype=tf.bool)
+
+        # build IC3D net
+        self.net = model_zoo.I3DNet(inps=self.inputs, n_class=len(ix2label), batch_size=1,
+                                    pretrained_model_path=None, final_end_point='SequatialLogits',
+                                    dropout_keep_prob=1.0, is_training=self.is_training)
+
+        # logits from IC3D net
+        out, merge_op = self.net(self.inputs)
+        self.softmax = tf.nn.softmax(out)
+        self.merge_op = merge_op
+
+        self.pred = tf.argmax(self.softmax, axis=-1)
+
+        # gpu config
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+
+        # open session
+        self.sess = tf.Session(config=config)
+        # self.logger = tf.summary.FileWriter('./log', self.sess.graph)
+        self.sess.run(tf.global_variables_initializer())
+
+        saver = tf.train.Saver()
+
+        ckpt = tf.train.latest_checkpoint(model_path)
+
+        if ckpt:
+            print('restore from {}...'.format(ckpt))
+            saver.restore(self.sess, ckpt)
+
+        # ckpt_state = tf.train.get_checkpoint_state(model_path)
+        #
+        # if ckpt_state:
+        #     ckpt = ckpt_state.all_model_checkpoint_paths#[ckpt_num]
+        #
+        #     print(len(ckpt))
+        #     print('restore from {}...'.format(ckpt))
+        #     saver.restore(self.sess, ckpt)
+
+
+    def run_demo_wrapper(self, frames):
+        tf.reset_default_graph()
+
+        summary, predictions, softmax = self.sess.run([self.merge_op, self.pred, self.softmax],
+                                                      feed_dict={self.inputs: frames,
+                                                                 self.is_training: False})
+        # predictions, softmax = self.sess.run([self.pred, self.softmax], feed_dict={self.inputs: frames,
+        #                                                                           self.is_training: False})
+
+        top_3 = map(lambda x: ix2label[int(x)], np.argsort(-softmax)[0][0][:3])
+
+        # for tensorboard
+        # self.logger.add_summary(summary)
+
+        mask = map(lambda x: int(ix2label[int(x)] != 'Doing other things'), predictions[0])
+
+        # casting
+        mask = np.expand_dims(np.expand_dims(mask, axis=0), 2)
+
+        predicted_label = map(lambda x: ix2label[int(x)], predictions[0])
+
+        # if predicted_label.count('Doing other things') > int(RScam.args.video_length*0.8):
+        # if predicted_label.count('Doing other things') > int(35 * 0.8):
+        #    return 'Doing other things', 'Null'
+
+        # apply mask to predictions
+        softmax_masked = np.mean(mask * softmax, axis=1)
+
+        from collections import Counter
+        freq_predictions = Counter(predicted_label).most_common()[0][0]
+
+        str_res = freq_predictions.strip()
+        confidence = softmax_masked.max()
+
+        return str_res, confidence, top_3
+
+
+class LSTMPredictor:
+    def __init__(self):
+        self.model_path = '/home/pjh/PycharmProjects/action-prediction/actionseq_model/'
+
+        self.inputs = tf.placeholder(dtype=tf.float32, shape=[None, None, 224, 224, 3])
+        self.is_training = tf.placeholder(dtype=tf.bool)
+
+        # build IC3D net
+        self.net = model_zoo.I3DNet(inps=self.inputs, n_class=len(ix2label), batch_size=1,
+                                    pretrained_model_path=None, final_end_point='SequatialLogits',
+                                    dropout_keep_prob=1.0, is_training=self.is_training)
+
+        # logits from IC3D net
+        out, merge_op = self.net(self.inputs)
+        self.softmax = tf.nn.softmax(out)
+        self.merge_op = merge_op
+
+        self.pred = tf.argmax(self.softmax, axis=-1)
+
+        # gpu config
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+
+        # open session
+        self.sess = tf.Session(config=config)
+        # self.logger = tf.summary.FileWriter('./log', self.sess.graph)
+        self.sess.run(tf.global_variables_initializer())
+
+        saver = tf.train.Saver()
+
+        ckpt = tf.train.latest_checkpoint(model_path)
+
+        if ckpt:
+            print('restore from {}...'.format(ckpt))
+            saver.restore(self.sess, ckpt)
+
+    def run_demo_wrapper(self):
+        action_list_labels = tf.placeholder(dtype=tf.int32, shape=[None, None], name='action_list_labels')
+        next_action_labels = tf.placeholder(dtype=tf.int32, shape=[None], name='next_action_labels')
+
+        action_one_hot = tf.one_hot(action_list_labels, n_actions)
+        embedding_action = tf.get_variable('embedding_action', shape=[n_actions + 1, n_hidden])
+
+        with tf.variable_scope('Actionseq'):
+            # lstm_cell_1 = tf.nn.rnn_cell.LSTMCell(n_hidden)
+            # lstm_cell_1 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_1, output_keep_prob=dropout)
+            # lstm_cell_2 = tf.nn.rnn_cell.LSTMCell(n_hidden)
+            #
+            # multi_cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell_1, lstm_cell_2])
+            #
+            # lstm_outputs, lstm_states = tf.nn.dynamic_rnn(cell=multi_cell,
+            #                                     inputs=action_one_hot,
+            #                                     sequence_length=tf.reduce_sum(tf.sign(action_list_labels),axis=1),
+            #                                     dtype=tf.float32)
+
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(n_hidden)
+            lstm_outputs, lstm_states = tf.nn.dynamic_rnn(cell=lstm_cell,
+                                                          inputs=action_one_hot,
+                                                          dtype=tf.float32)
+
+            lstm_outputs = tf.transpose(lstm_outputs, [1, 0, 2])
+            lstm_outputs = lstm_outputs[-1]
+
+            logits = tf.matmul(lstm_outputs, embedding_action, transpose_b=True)
+
+        loss = tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits(labels=tf.one_hot(next_action_labels, n_actions + 1),
+                                                    logits=logits))
+
+        correct = tf.cast(tf.equal(next_action_labels, tf.cast(tf.argmax(logits, axis=-1), tf.int32)), tf.float32)
+        acc = tf.reduce_mean(correct)
+
+        global_step = tf.Variable(0, trainable=False)
+        train_op = tf.train.AdamOptimizer(learning_rate).minimize(loss, global_step=global_step)
+
+        return {
+            'action_list_labels': action_list_labels,
+            'next_action_labels': next_action_labels,
+            'loss': loss,
+            'train_op': train_op,
+            'logits': logits,
+            'acc': acc,
+            'global_step': global_step
+        }
+
