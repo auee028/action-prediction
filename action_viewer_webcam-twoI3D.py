@@ -6,6 +6,8 @@ sys.setdefaultencoding('utf-8')       # python 3 doesn't need this
 
 import cv2
 import copy
+import glob
+import natsort
 import numpy as np
 import math
 import tensorflow as tf
@@ -59,8 +61,6 @@ def pred_action_orig(frames):
 
     else:
         result = None
-    action_model_cropped = TFModel(
-        os.path.join('/media/pjh/HDD2/Dataset/save_model', 'i3d-ABR_action_augmented-{}'.format(4)))
 
     return result, confidence, top_3
 
@@ -82,10 +82,32 @@ def pred_action_crop(frames):
 
     else:
         result = None
-    action_model_cropped = TFModel(
-        os.path.join('/media/pjh/HDD2/Dataset/save_model', 'i3d-ABR_action_augmented-{}'.format(4)))
 
     return result, confidence, top_3
+
+def calc_framediff(clip):
+    value_list = []
+    for idx in range(len(clip)-1):
+        prev_frame = cv2.imread(clip[idx])
+        prev_frame = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+        curr_frame = cv2.imread(clip[idx+1])
+        curr_frame = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
+
+        frame_diff = cv2.absdiff(prev_frame, curr_frame)
+        frame_diff = np.array(frame_diff, dtype=np.int32)
+
+        value_list.append(np.sum(frame_diff))
+
+    # print(max(value_list), min(value_list))
+
+    # scaling values to [0-1] range using formula
+    for i in range(len(value_list)):
+        value_list[i] = float(value_list[i] - np.min(value_list)) / (np.max(value_list) - np.min(value_list))
+
+    # value_diff = sum(value_list)/len(value_list)
+    # print(value_diff)
+    # print(sum(value_list))
+    return sum(value_list)
 
 
 if __name__ == '__main__':
@@ -231,10 +253,11 @@ if __name__ == '__main__':
                             #     cv2.waitKey(300)
                             print('number of sampled frames : {}'.format(len(sampled_frames)))
 
+
                             # crop all images
                             cropped_frames = CropFrames(yolo, meta, sampled_frames)
 
-
+                            # decide whether I3D to use ( orig / crop )
                             tf.reset_default_graph()
                             # with tf.name_scope("predict_orig"):
                             result_o, confidence_o, top3_o = pred_action_orig(sampled_frames)#pred_action(frames[-args.action_video_length:], frame_num)
