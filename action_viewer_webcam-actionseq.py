@@ -142,7 +142,9 @@ if __name__ == '__main__':
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0110/Juhee/4/2020-01-09-17-27-09_00_99.avi')     # reading
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0113/jeongwoo/12/2020-01-10-18-15-12_00_86.avi')
     # cap = cv2.VideoCapture('/home/pjh/Videos/test_vid.avi')
-    cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
+    cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_01_643.avi')
+    # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/12_reading- talking on a phone-leaving the office/2020-02-06-15-09-17_01_391.avi')
+
     cap.set(3, args.width)
     cap.set(4, args.height)
     cap.set(5, args.fps)
@@ -175,6 +177,12 @@ if __name__ == '__main__':
         ret, frame = cap.read()
         if not ret:
             break
+
+        ret, jpeg = cv2.imencode('.jpg', cv2.resize(frame, (320, 240)))
+        stream = jpeg.tobytes()
+
+        # for ROI streaming
+        requests.post('http://127.0.0.1:5000/update_stream', data=stream)
 
         display_frame = copy.deepcopy(frame)
         display_frame = cv2.resize(display_frame, (224, 224))
@@ -258,7 +266,7 @@ if __name__ == '__main__':
                             print('number of sampled frames : {}'.format(len(sampled_frames)))
 
                             # get the value of frame variances(abs difference)
-                            if calc_framediff(sampled_frames) < 33:     # Avg. diff of 100 samples : 34.2453916243
+                            if calc_framediff(sampled_frames) < 34.25:     # Avg. diff of 100 samples : 34.2453916243 -> 34.25
                                 # crop all images
                                 cropped_frames = CropFrames(yolo, meta, sampled_frames)
 
@@ -273,6 +281,9 @@ if __name__ == '__main__':
                                 result, confidence, top_3 = pred_action_orig(sampled_frames)
                                 print("\torig  : {}, {}, {}".format(result, confidence, top_3))
                                 tf.reset_default_graph()
+
+                            requests.post(
+                                'http://127.0.0.1:5000/post/{}'.format(action))
 
 
                             cv2.putText(display_frame, str(result), (100, 50), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255, 2))
@@ -336,9 +347,9 @@ if __name__ == '__main__':
 
     # try:
     #     # requests.post('http://155.230.24.109:50001/api/v1/actions/action/{}/{}'.format('home',action_list[-1]))
-    #     requests.get(
-    #         'http://192.168.0.4:3001/api/v1/actions/action/{}/{}'.format('home', action_list[-1]))
-    #     # requests.post('http://ceslea.ml:50001/api/v1/actions/action/{}/{}'.format('home',action_list[-1]))
+    #     # requests.get(
+    #     #     'http://192.168.0.4:3001/api/v1/actions/action/{}/{}'.format('home', action_list[-1]))
+    #     requests.post('http://ceslea.ml:50001/api/v1/actions/action/{}/{}'.format('home',action_list[-1]))
     #     print('send action')
     # except:
     #     pass

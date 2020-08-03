@@ -3,6 +3,8 @@ import i3d
 import re
 from stn import spatial_transformer_network as transformer
 
+import lstm
+
 
 def preprocess(inps, batch_size, is_training):
     _shape = tf.shape(inps)
@@ -42,6 +44,7 @@ def preprocess(inps, batch_size, is_training):
 
     return processed_inputs_trans
 
+
 class I3DNet:
     def __init__(self, inps, n_class, batch_size, pretrained_model_path, final_end_point, dropout_keep_prob, is_training, scope='v/SenseTime_I3D'):
 
@@ -77,3 +80,16 @@ class I3DNet:
                         dropout_keep_prob=self.dropout_keep_prob, is_training=self.is_training, reuse=True)
 
         return out, merge_op
+
+
+class LSTMNet:
+    def __init__(self, n_class, n_hidden, scope='ActionLSTM'):
+
+        self.n_class = n_class
+        self.n_hidden = n_hidden
+        self.scope = scope
+
+    def __call__(self, inps):
+        out = lstm.LSTM(inps, num_classes=self.n_class, num_hidden=self.n_hidden, scope=self.scope, reuse=False)
+
+        return out

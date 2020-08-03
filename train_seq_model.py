@@ -47,7 +47,7 @@ def build(n_actions, n_hidden, dropout, learning_rate):
     action_one_hot = tf.one_hot(action_list_labels, n_actions)
     embedding_action = tf.get_variable('embedding_action', shape=[n_actions + 1, n_hidden])
 
-    with tf.variable_scope('Actionseq'):
+    with tf.variable_scope('ActionLSTM'):
         # lstm_cell_1 = tf.nn.rnn_cell.LSTMCell(n_hidden)
         # lstm_cell_1 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_1, output_keep_prob=dropout)
         # lstm_cell_2 = tf.nn.rnn_cell.LSTMCell(n_hidden)
@@ -136,7 +136,7 @@ def train(data_path, batch_size):
                 print('epoch : {}, loss: {}, acc : {}'.format(epoch, loss, acc))
                 # print('step : {}, loss: {}, acc : {}'.format(m['global_step'].eval(sess), loss, acc))
 
-                with open('train_seq.txt', 'w') as f:
+                with open('train_seq.txt', 'a') as f:
                     f.write('epoch : {}, loss: {}, acc : {}\n'.format(epoch, loss, acc))
 
                 # print('saving ckpt...')
