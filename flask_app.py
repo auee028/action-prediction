@@ -34,7 +34,6 @@ def set_action_panel():
     global _action_panel
     _action_panel = {"labels": eval(request.args.get("labels")),
                      "probs": eval(request.args.get("probs"))}
-    print(_action_panel["labels"], _action_panel["probs"], _action_panel["probs"][0])
     return 'complete'
 
 @app.route('/state/get/action')
