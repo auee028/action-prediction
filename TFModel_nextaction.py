@@ -109,20 +109,19 @@ class I3DClassifier:
 
 class LSTMPredictor:
     def __init__(self):
-        self.model_path = '/home/pjh/PycharmProjects/action-prediction/actionseq_model/'
+        self.model_path = '/home/pjh/PycharmProjects/action-prediction/actionseq_model'
 
-        self.inputs = tf.placeholder(dtype=tf.float32, shape=[None, None, 224, 224, 3])
-        self.is_training = tf.placeholder(dtype=tf.bool)
+        self.n_actions = 15
+        self.n_hidden = 128
 
-        # build IC3D net
-        self.net = model_zoo.I3DNet(inps=self.inputs, n_class=len(ix2label), batch_size=1,
-                                    pretrained_model_path=None, final_end_point='SequatialLogits',
-                                    dropout_keep_prob=1.0, is_training=self.is_training)
+        self.inputs = tf.placeholder(dtype=tf.int32, shape=[None, None])
 
-        # logits from IC3D net
-        out, merge_op = self.net(self.inputs)
+        # build LSTM net
+        self.net = model_zoo.LSTMNet(n_class=self.n_actions, n_hidden=self.n_hidden)
+
+        # logits from LSTM net
+        out = self.net(self.inputs)
         self.softmax = tf.nn.softmax(out)
-        self.merge_op = merge_op
 
         self.pred = tf.argmax(self.softmax, axis=-1)
 
@@ -137,58 +136,16 @@ class LSTMPredictor:
 
         saver = tf.train.Saver()
 
-        ckpt = tf.train.latest_checkpoint(model_path)
+        ckpt_state = tf.train.get_checkpoint_state(self.model_path)
+        # ckpt = os.path.join(self.model_path, ckpt_state.all_model_checkpoint_paths[9])    # ckpt-10
+        ckpt = ckpt_state.all_model_checkpoint_paths[9]  # ckpt-10
 
         if ckpt:
             print('restore from {}...'.format(ckpt))
             saver.restore(self.sess, ckpt)
 
-    def run_demo_wrapper(self):
-        action_list_labels = tf.placeholder(dtype=tf.int32, shape=[None, None], name='action_list_labels')
-        next_action_labels = tf.placeholder(dtype=tf.int32, shape=[None], name='next_action_labels')
+    def run_demo_wrapper(self, action_seq):
 
-        action_one_hot = tf.one_hot(action_list_labels, n_actions)
-        embedding_action = tf.get_variable('embedding_action', shape=[n_actions + 1, n_hidden])
+        predictions = self.sess.run(self.pred, feed_dict={self.inputs: action_seq})
 
-        with tf.variable_scope('Actionseq'):
-            # lstm_cell_1 = tf.nn.rnn_cell.LSTMCell(n_hidden)
-            # lstm_cell_1 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_1, output_keep_prob=dropout)
-            # lstm_cell_2 = tf.nn.rnn_cell.LSTMCell(n_hidden)
-            #
-            # multi_cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell_1, lstm_cell_2])
-            #
-            # lstm_outputs, lstm_states = tf.nn.dynamic_rnn(cell=multi_cell,
-            #                                     inputs=action_one_hot,
-            #                                     sequence_length=tf.reduce_sum(tf.sign(action_list_labels),axis=1),
-            #                                     dtype=tf.float32)
-
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(n_hidden)
-            lstm_outputs, lstm_states = tf.nn.dynamic_rnn(cell=lstm_cell,
-                                                          inputs=action_one_hot,
-                                                          dtype=tf.float32)
-
-            lstm_outputs = tf.transpose(lstm_outputs, [1, 0, 2])
-            lstm_outputs = lstm_outputs[-1]
-
-            logits = tf.matmul(lstm_outputs, embedding_action, transpose_b=True)
-
-        loss = tf.reduce_mean(
-            tf.nn.softmax_cross_entropy_with_logits(labels=tf.one_hot(next_action_labels, n_actions + 1),
-                                                    logits=logits))
-
-        correct = tf.cast(tf.equal(next_action_labels, tf.cast(tf.argmax(logits, axis=-1), tf.int32)), tf.float32)
-        acc = tf.reduce_mean(correct)
-
-        global_step = tf.Variable(0, trainable=False)
-        train_op = tf.train.AdamOptimizer(learning_rate).minimize(loss, global_step=global_step)
-
-        return {
-            'action_list_labels': action_list_labels,
-            'next_action_labels': next_action_labels,
-            'loss': loss,
-            'train_op': train_op,
-            'logits': logits,
-            'acc': acc,
-            'global_step': global_step
-        }
-
+        return predictions

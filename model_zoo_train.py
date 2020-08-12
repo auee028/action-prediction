@@ -81,6 +81,8 @@ class multiscaleI3DNet:
         hidden_feat_3 = tf.reshape(hidden_feat_3, (self.batch_size, -1))
 
         embedding_1 = self._fully_connected()
+
+
         return out
 
     # leaky ReLU

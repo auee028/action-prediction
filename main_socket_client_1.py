@@ -145,9 +145,10 @@ def send_video():
             if frames_result != 'None':
                 FIRST_ACTION = False
 
-            action_list.append('reading')
-            FIRST_ACTION = False
-            action_list.append(frames_result)
+            # # just for test
+            # action_list.append('reading')
+            # FIRST_ACTION = False
+            # action_list.append(frames_result)
 
             START_TIME = time.time()
 
