@@ -5,6 +5,8 @@ from stn import spatial_transformer_network as transformer
 
 from resnet3d import ResNet
 
+import i3d_multiscale as mtsi3d
+
 
 def preprocess(inps, batch_size, is_training):
     _shape = tf.shape(inps)
@@ -39,6 +41,62 @@ def preprocess(inps, batch_size, is_training):
         processed_inputs_trans.append(seq_img_trans.stack())
 
     return processed_inputs_trans
+
+class multiscaleI3DNet:
+    def __init__(self, inps, n_class, batch_size,
+                 pretrained_model_path, final_end_point, dropout_keep_prob,
+                 is_training, scope='v/SenseTime_I3D'):
+
+        self.final_end_point = final_end_point
+        self.n_class = n_class
+        self.batch_size = batch_size
+        self.dropout_keep_prob = dropout_keep_prob
+        self.is_training = is_training
+        self.scope = scope
+
+        # build entire pretrained networks (dummy operation!)
+        mtsi3d.MultiscaleI3D(preprocess(inps,batch_size,is_training), num_classes=n_class,
+            final_endpoint=final_end_point, scope=scope,
+            dropout_keep_prob=dropout_keep_prob, is_training=is_training)
+
+        var_dict = { re.sub(r':\d*','',v.name):v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=scope) }
+        self.assign_ops = []
+        for var_name, var_shape in tf.contrib.framework.list_variables(pretrained_model_path):
+            if var_name.startswith('v/SenseTime_I3D/Logits'):
+                continue
+            # load variable
+            var = tf.contrib.framework.load_variable(pretrained_model_path, var_name)
+            assign_op = var_dict[var_name].assign(var)
+            self.assign_ops.append(assign_op)
+
+    def __call__(self, inps):
+        out, _, hiddens = mtsi3d.MultiscaleI3D(preprocess(inps, self.batch_size,self.is_training),
+                        num_classes=self.n_class, final_endpoint=self.final_end_point, scope=self.scope,
+                        dropout_keep_prob=self.dropout_keep_prob, is_training=self.is_training, reuse=True)
+
+        hidden_feat_1, hidden_feat_2, hidden_feat_3 = hiddens
+
+        hidden_feat_1 = tf.reshape(hidden_feat_1, (self.batch_size, -1))
+        hidden_feat_2 = tf.reshape(hidden_feat_2, (self.batch_size, -1))
+        hidden_feat_3 = tf.reshape(hidden_feat_3, (self.batch_size, -1))
+
+        embedding_1 = self._fully_connected()
+        return out
+
+    # leaky ReLU
+    def _relu(self, x):
+        return tf.nn.relu(x)
+
+    # fc
+    def _fully_connected(self, x, out_dim):
+        # reshape
+        x = tf.reshape(x, [self.batch_size, -1])
+        w = tf.get_variable('weights', [x.get_shape()[1], out_dim],
+                            initializer=tf.variance_scaling_initializer(distribution="uniform"))
+
+        b = tf.get_variable('biases', [out_dim], initializer=tf.constant_initializer())
+        x = tf.nn.xw_plus_b(x, w, b)
+        return x
 
 
 class I3DNet:
