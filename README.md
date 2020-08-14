@@ -44,6 +44,31 @@ Val dataset : 1430 videos
 (ratio of train/val : 8.96)
 ```
 
+## Requirements
+Download darknet and move the folder of 'darknet/' below the root directory of 'action_anticipation/'. (reference : [here](https://pgmrlsh.tistory.com/4))
+
+# step 1. Download darknet
+```
+cd action_anticipation/
+git clone https://github.com/pjreddie/darknet
+
+```
+
+# step 2. Edit Makefile
+```
+vi Makefile
+
+```
+If you use CUDA, set GPU=1.
+If you use OpenCV, set OPENCV=1.
+
+# step 3. Make
+```
+cd darknet
+make
+
+```
+
 ## Training/Validation
 train_script.py
 
