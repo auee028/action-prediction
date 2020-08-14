@@ -4,7 +4,7 @@ import datetime
 import argparse
 
 import cv2
-import requests
+# import requests
 from socket import *
 
 
@@ -34,10 +34,15 @@ def send_video(ip, port):
             length = recv(csoc, 4)
             if length == None:
                 continue
-            file_name = recv(csoc, length)      # name : "DATE_TOTAL-FRAMES_NAME_ACTION-CLASS_CONFIDENCE.avi"
+
+            msg = recv(csoc, int(length))
+            print("{}  waiting a video file ...".format(msg))
 
             length = recv(csoc, 16)
-            video = recv(csoc, length)          # VIDEO file in .avi format
+            video = recv(csoc, int(length))                  # VIDEO file in .avi format
+
+            length = recv(csoc, 4)
+            file_name = recv(csoc, int(length))              # name : "DATE_TOTAL-FRAMES_NAME_ACTION-CLASS_CONFIDENCE.avi"
 
             with open(os.path.join(video_root, file_name), 'wb') as file:
                 file.write(video)
@@ -63,7 +68,7 @@ def main_loop(ip, port):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="data collection client")
     parser.add_argument('--ip', type=str, default='127.0.0.1')
-    parser.add_argument('--port', type=str, default='5050')
+    parser.add_argument('--port', type=int, default=5050)
 
     args = parser.parse_args()
 

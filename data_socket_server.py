@@ -125,7 +125,7 @@ def recv(csoc, count):
 def main_loop():
     ssoc = socket(AF_INET, SOCK_STREAM)
     ssoc.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    ssoc.bind(('', 5050))
+    ssoc.bind(('127.0.0.1', 5050))
     ssoc.listen(1)
     csoc=None
 
@@ -134,7 +134,7 @@ def main_loop():
             if csoc is None:
                 print("waiting for connection")
                 csoc, addr_info = ssoc.accept()
-                print("got connection from".format(addr_info))
+                print("got connection from {}".format(addr_info))
             else:
                 while(cap.isOpened()):
                     ret, frame = cap.read()
@@ -148,6 +148,11 @@ def main_loop():
                     frames = camera.get_frames(frame)
                     if len(frames) == 0:
                         continue
+
+                    msg = "frames collected"
+                    csoc.send(str(len(msg)).ljust(4))
+                    csoc.send(msg)
+                    print(msg)
 
                     # fourcc = cv2.VideoWriter_fourcc(*'DIVX')
                     # fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
