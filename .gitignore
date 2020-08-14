@@ -6,5 +6,6 @@
 /__pychche__
 /data_aug_log
 /collect_data/tmp
+/backup_codes
 *.avi
 *.pyc
