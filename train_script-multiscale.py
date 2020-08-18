@@ -19,13 +19,13 @@ tf.app.flags.DEFINE_float("learning_rate", 1e-1, "learning rate")
 tf.app.flags.DEFINE_integer("k_fold", 5, "data ratio")
 tf.app.flags.DEFINE_bool("enable_k_fold", True, "enable k fold")
 
-tf.app.flags.DEFINE_string("model", 'i3d', "which model to use")      # resnetl10/i3d
+tf.app.flags.DEFINE_string("model", 'mtsi3d', "which model to use")      # resnetl10/i3d/mtsi3d
 
 # tf.app.flags.DEFINE_string("video_root_path", '/media/pjh/HDD2/Dataset/STAIR-actions-master/STAIR_Actions_v1.1-25frames', "video root path")
 # tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug"], "video root path")
 tf.app.flags.DEFINE_string("video_root_path", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug", "video root path")
 # tf.app.flags.DEFINE_string("which", 'STAIR', "which annotation to use")
-tf.app.flags.DEFINE_string("which", 'ABR_action_augmented-{}'.format(5), "which annotation to use")
+tf.app.flags.DEFINE_string("which", 'ABR_action_cropped-{}'.format(1), "which annotation to use")
 
 tf.app.flags.DEFINE_string("log_dir", '/home/pjh/PycharmProjects/action-prediction/tensorboard', 'loss log directory for tensorboard')
 
@@ -125,6 +125,12 @@ if model == 'resnetl10':
     net = model_zoo.ResNetl10Detector(inps=inputs, batch_size=batch_size, n_class=n_class, is_training=is_training,
                            final_end_point='Logits', dropout_keep_prob=dropout_keep_prob,
                            scope='v/ResNetl10', filters=[16, 16, 32, 64, 128], block_num=[1, 1, 1, 1])
+
+elif model == 'i3d':
+    net = model_zoo.I3DNet(inps=inputs, n_class=n_class, batch_size=batch_size,
+                           pretrained_model_path='pretrained/i3d-tensorflow/kinetics-i3d/data/kinetics_i3d/model',
+                           final_end_point='Logits', dropout_keep_prob=dropout_keep_prob,
+                           is_training=is_training, scope='v/SenseTime_I3D')
 
 elif model == 'mtsi3d':
     net = model_zoo.multiscaleI3DNet(inps=inputs, n_class=n_class, batch_size=batch_size,

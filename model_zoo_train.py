@@ -70,35 +70,17 @@ class multiscaleI3DNet:
             self.assign_ops.append(assign_op)
 
     def __call__(self, inps):
-        out, _, hiddens = mtsi3d.MultiscaleI3D(preprocess(inps, self.batch_size,self.is_training),
-                        num_classes=self.n_class, final_endpoint=self.final_end_point, scope=self.scope,
-                        dropout_keep_prob=self.dropout_keep_prob, is_training=self.is_training, reuse=True)
-
-        hidden_feat_1, hidden_feat_2, hidden_feat_3 = hiddens
-
-        hidden_feat_1 = tf.reshape(hidden_feat_1, (self.batch_size, -1))
-        hidden_feat_2 = tf.reshape(hidden_feat_2, (self.batch_size, -1))
-        hidden_feat_3 = tf.reshape(hidden_feat_3, (self.batch_size, -1))
-
-        embedding_1 = self._fully_connected()
-
+        out, _ = mtsi3d.MultiscaleI3D(preprocess(inps, self.batch_size, self.is_training),
+                                      num_classes=self.n_class,
+                                      batch_size=self.batch_size,
+                                      is_training=self.is_training,
+                                      final_endpoint=self.final_end_point,
+                                      dropout_keep_prob=self.dropout_keep_prob,
+                                      scope=self.scope,
+                                      reuse=True)
 
         return out
 
-    # leaky ReLU
-    def _relu(self, x):
-        return tf.nn.relu(x)
-
-    # fc
-    def _fully_connected(self, x, out_dim):
-        # reshape
-        x = tf.reshape(x, [self.batch_size, -1])
-        w = tf.get_variable('weights', [x.get_shape()[1], out_dim],
-                            initializer=tf.variance_scaling_initializer(distribution="uniform"))
-
-        b = tf.get_variable('biases', [out_dim], initializer=tf.constant_initializer())
-        x = tf.nn.xw_plus_b(x, w, b)
-        return x
 
 
 class I3DNet:
