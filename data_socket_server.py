@@ -3,7 +3,7 @@ import sys
 # from importlib import reload            # python 3
 reload(sys)
 sys.setdefaultencoding('utf-8')       # python 3 doesn't need this
-
+import os
 import argparse
 import cv2
 import numpy as np
