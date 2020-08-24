@@ -250,6 +250,7 @@ for epoch in range(start+1, epochs):
     index = np.arange(len(train_videos))
     np.random.shuffle(index)
     train_intention_data = train_intention_data[index]
+    train_paths = train_videos[index]
     train_videos = train_videos[index]
     train_acc = 0
     train_cur_acc = 0
@@ -258,7 +259,8 @@ for epoch in range(start+1, epochs):
             print("start batch: {}, end batch: {}".format(start, end))
             continue
         train_frames = sf.preprocess_frame(train_videos[start:end])
-        print(train_frames.shape)
+        if train_frames.shape[1] != 64:
+            print(train_frames.shape, train_paths[start:end])
         train_intention = train_intention_data[start:end]
 
         feed_dic = {inputs: train_frames,

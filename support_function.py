@@ -64,12 +64,93 @@ def get_HRI(root, text_path):
            int(n_intention)
 
 
+def get_HRI_v2(list_root, list_text_path):
+    filename_lb2ix = 'label_to_ix-ABR_action-aug.pkl'
+
+    len_root = len(list_root)
+    len_text_path = len(list_text_path)
+
+    if len_root != len_text_path:
+        print("ROOT NUMBER & TEXT FILE NUMBER are not same !\n")
+        print("len_root: {}, len_text_path: {}".format(len_root, len_text_path))
+        return 1
+
+    # when the number of data is one
+    if len_root == 1:
+        root = list_root
+        text_path = list_text_path
+
+        txt = pd.read_table(text_path, dtype=str, sep='\t', names={'path', 'label'})
+        txt['path'] = txt['path'].map(lambda x: os.path.join(root, x))
+        txt = txt[txt['path'].map(lambda x: os.path.exists(x))]
+
+        label_set = natsorted(set(txt['label']))
+
+        label_to_ix = dict(zip(list(label_set), range(len(label_set))))
+        print(label_set)
+
+        # with open('categories.txt', 'w') as txt:
+        #     txt.write(str(label_set))
+
+        # save label_to_ix as pkl
+        pickle.dump(label_to_ix, file(filename_lb2ix, 'wb'))
+
+        n_intention = len(label_set)
+
+        return txt['path'].values, \
+               np.array(map(lambda lab: label_to_ix[lab], txt['label'].values)), \
+               int(n_intention)
+
+    # when the number of data are more than two(augmented data -> same labels)
+    for i in range(len_root):
+        root = list_root[i]
+        text_path = list_text_path[i]
+
+        if i == 0:
+            txt = pd.read_table(text_path, dtype=str, sep='\t', names={'path', 'label'})
+            txt['path'] = txt['path'].map(lambda x: os.path.join(root, x))
+            txt = txt[txt['path'].map(lambda x: os.path.exists(x))]
+            # print(type(txt))
+            # print(len(txt['path'].values))
+        else:
+            df_tmp = pd.read_table(text_path, dtype=str, sep='\t', names={'path', 'label'})
+            df_tmp['path'] = df_tmp['path'].map(lambda x: os.path.join(root, x))
+            df_tmp = df_tmp[df_tmp['path'].map(lambda x: os.path.exists(x))]
+            # print(len(df_tmp['path'].values))
+
+            txt = pd.concat([txt, df_tmp])
+    print("number of videos : {}".format(len(txt)))
+
+    label_set = natsorted(set(txt['label']))
+
+    label_to_ix = dict(zip(list(label_set), range(len(label_set))))
+    # print(label_set)
+
+    # with open('categories.txt', 'w') as txt:
+    #     txt.write(str(label_set))
+
+    # save label_to_ix as pkl
+    pickle.dump(label_to_ix, file(filename_lb2ix, 'wb'))
+
+    n_intention = len(label_set)
+
+    np.random.shuffle(txt['path'].values)
+    # print(txt['path'].values[:100])
+
+
+    return txt['path'].values, \
+           np.array(map(lambda lab: label_to_ix[lab], txt['label'].values)), \
+           int(n_intention)
+
+
 def crop_frame(frame, CROP_SIZE):
     height, width, channel = frame.shape
 
     if (width > height):
         scale = float(CROP_SIZE) / float(height)
         frame = cv2.resize(frame, (int(width * scale + 1), CROP_SIZE)).astype(np.float32)
+    elif (width == height):
+        frame = cv2.resize(frame, (CROP_SIZE, CROP_SIZE)).astype(np.float32)
     else:
         scale = float(CROP_SIZE) / float(width)
         frame = cv2.resize(frame, (CROP_SIZE, int(height * scale + 1))).astype(np.float32)
@@ -152,7 +233,8 @@ def preprocess_frame(video_batch):
         frame_batch.append(frame_list)
 
     # zero-padding through time axis
-    maxlen = max(map(lambda frame: len(frame), frame_batch))
+    # maxlen = max(map(lambda frame: len(frame), frame_batch))
+    maxlen = 64
     frame_batch = np.array(map(lambda frame: frame + [np.zeros_like(frame[0])]*(maxlen-len(frame)), frame_batch))
 
     # end_time = time.time()
