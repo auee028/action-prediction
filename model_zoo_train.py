@@ -55,7 +55,7 @@ class multiscaleI3DNet:
         self.scope = scope
 
         # build entire pretrained networks (dummy operation!)
-        mtsi3d.MultiscaleI3D(preprocess(inps,batch_size,is_training), num_classes=n_class,
+        mtsi3d.MultiscaleI3D(preprocess(inps,batch_size,is_training), num_classes=n_class, batch_size=self.batch_size,
             final_endpoint=final_end_point, scope=scope,
             dropout_keep_prob=dropout_keep_prob, is_training=is_training)
 
@@ -63,6 +63,8 @@ class multiscaleI3DNet:
         self.assign_ops = []
         for var_name, var_shape in tf.contrib.framework.list_variables(pretrained_model_path):
             if var_name.startswith('v/SenseTime_I3D/Logits'):
+                continue
+            if not var_name.startswith('v/SenseTime_I3D'):
                 continue
             # load variable
             var = tf.contrib.framework.load_variable(pretrained_model_path, var_name)

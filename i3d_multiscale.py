@@ -97,10 +97,12 @@ def embedding_feat_1(x, out_dim, name):
 		out = tf.squeeze(tf.stack(processed_inputs), [2, 3])
 		out = tf.layers.flatten(out)
 
-		out = tf.layers.dense(out, 4096)
-		out = tf.layers.dense(out, 1000)
-		out = tf.layers.dense(out, 1000)
-		out = tf.layers.dense(out, out_dim)
+		with tf.variable_scope('fc_layers'):
+			# out = tf.layers.dense(out, 4096)
+			out = tf.layers.dense(out, 2048)
+			out = tf.layers.dense(out, 1000)
+			# out = tf.layers.dense(out, 1000)
+			out = tf.layers.dense(out, out_dim)
 
 		return out
 
@@ -141,10 +143,12 @@ def embedding_feat_2(x, out_dim, name):
 		out = tf.squeeze(tf.stack(processed_inputs), [2, 3])
 		out = tf.layers.flatten(out)
 
-		out = tf.layers.dense(out, 4096)
-		out = tf.layers.dense(out, 1000)
-		out = tf.layers.dense(out, 1000)
-		out = tf.layers.dense(out, out_dim)
+		with tf.variable_scope('fc_layers'):
+			# out = tf.layers.dense(out, 4096)
+			out = tf.layers.dense(out, 2048)
+			out = tf.layers.dense(out, 1000)
+			# out = tf.layers.dense(out, 1000)
+			out = tf.layers.dense(out, out_dim)
 
 		return out
 
@@ -194,16 +198,17 @@ def embedding_feat_3(x, out_dim, name):
 		out = tf.squeeze(tf.stack(processed_inputs), [2, 3])
 		out = tf.layers.flatten(out)
 
-		out = tf.layers.dense(out, 1000)
-		out = tf.layers.dense(out, 1000)
-		out = tf.layers.dense(out, out_dim)
+		with tf.variable_scope('fc_layers'):
+			out = tf.layers.dense(out, 1000)
+			# out = tf.layers.dense(out, 1000)
+			out = tf.layers.dense(out, out_dim)
 
 		return out
 
 def _conv2d(x, num_filters, filter_height=3, filter_width=3, stride=1, padding='SAME'):
 	input_channels = int(x.get_shape()[-1])
 
-	W = tf.get_variable('weights', shape=[filter_height, filter_width, input_channels, num_filters],
+	W = tf.get_variable('w', shape=[filter_height, filter_width, input_channels, num_filters],
 						initializer=tf.random_normal_initializer(mean=0.0, stddev=0.01))
 	x = tf.nn.conv2d(x, W, strides=[1, stride, stride, 1], padding=padding)
 	x = tf.nn.relu(x)
@@ -266,7 +271,10 @@ def MultiscaleI3D(inputs,
 		net = tf.nn.max_pool3d(net, [1, 1, 3, 3, 1], [1, 1, 2, 2, 1], padding='SAME', name=end_point)
 		end_points[end_point] = net
 
-		hidden_feat_1 = net
+		# hidden_feat_1
+		net.set_shape((batch_size, 32, 28, 28, 192))
+		with tf.variable_scope('EmbeddingFeats'):
+			embedding_1 = embedding_feat_1(net, num_classes, name='Embedding_feat_1')
 
 		if end_point == final_endpoint: return net, end_points
 		end_point = 'Mixed_3b'
@@ -322,7 +330,10 @@ def MultiscaleI3D(inputs,
                                padding='SAME', name=end_point)
 		end_points[end_point] = net
 
-		hidden_feat_2 = net
+		# hidden_feat_2
+		net.set_shape((batch_size, 16, 14, 14, 480))
+		with tf.variable_scope('EmbeddingFeats'):
+			embedding_2 = embedding_feat_2(net, num_classes, name='Embedding_feat_2')
 
 		if end_point == final_endpoint: return net, end_points
 		end_point = 'Mixed_4b'
@@ -456,7 +467,10 @@ def MultiscaleI3D(inputs,
 							   padding='SAME', name=end_point)
 		end_points[end_point] = net
 
-		hidden_feat_3 = net
+		# hidden_feat_3
+		net.set_shape((batch_size, 8, 7, 7, 832))
+		with tf.variable_scope('EmbeddingFeats'):
+			embedding_3 = embedding_feat_3(net, num_classes, name='Embedding_feat_3')
 
 		if end_point == final_endpoint: return net, end_points
 		end_point = 'Mixed_5b'
@@ -531,6 +545,7 @@ def MultiscaleI3D(inputs,
 			averaged_logits = tf.reduce_mean(squatial_logits, axis=1)
 		# end_points[end_point] = averaged_logits
 
+		"""
 		hidden_feat_1.set_shape((batch_size, 32, 28, 28, 192))
 		hidden_feat_2.set_shape((batch_size, 16, 14, 14, 480))
 		hidden_feat_3.set_shape((batch_size, 8, 7, 7, 832))
@@ -548,9 +563,10 @@ def MultiscaleI3D(inputs,
 		# embedding_2 = _2dcnn(hidden_feat_2, 'FeatEmbedding_2')
 		# embedding_3 = _2dcnn(hidden_feat_3, 'FeatEmbedding_3')
 		with tf.variable_scope('EmbeddingFeats'):
-			embedding_1 = embedding_feat_1(hidden_feat_1, num_classes, 'Embedding_feat_1')
-			embedding_2 = embedding_feat_2(hidden_feat_2, num_classes, 'Embedding_feat_2')
-			embedding_3 = embedding_feat_3(hidden_feat_3, num_classes, 'Embedding_feat_3')
+			embedding_1 = embedding_feat_1(hidden_feat_1, num_classes, name='Embedding_feat_1')
+			embedding_2 = embedding_feat_2(hidden_feat_2, num_classes, name='Embedding_feat_2')
+			embedding_3 = embedding_feat_3(hidden_feat_3, num_classes, name='Embedding_feat_3')
+		"""
 
 		similarity_score_1 = _dot_product(averaged_logits, embedding_1)
 		similarity_score_2 = _dot_product(averaged_logits, embedding_2)
@@ -587,7 +603,7 @@ def MultiscaleI3D(inputs,
 		logits = tf.layers.dense(tf.concat([attn_value, averaged_logits], axis=1), num_classes)
 
 		end_points[end_point] = logits
-		if end_point == final_endpoint: return logits, end_points
+		if end_point == final_endpoint: return logits, end_points#, [hidden_feat_1, hidden_feat_2, hidden_feat_3]
 
 		if final_endpoint == 'SequatialLogits': return squatial_logits, end_points
 
@@ -601,8 +617,8 @@ def MultiscaleI3D(inputs,
 
 if __name__ == '__main__':
 	# inputs: [batch_size, num_frames, h, w, c], outputs: [batch_size, dim_features]
-	inps = tf.placeholder(dtype=tf.float32, shape=[4, 64, 224, 224, 3])
-	si3d, _, hiddens = MultiscaleI3D(inps, num_classes=15,
+	inps = tf.placeholder(dtype=tf.float32, shape=[3, 64, 224, 224, 3])
+	si3d, _, hiddens = MultiscaleI3D(inps, num_classes=15, batch_size=3,
 								   final_endpoint='Logits', scope='v/SenseTime_I3D',
 								   dropout_keep_prob=0.5, is_training=True)
 	print(si3d)  # (4, 15)

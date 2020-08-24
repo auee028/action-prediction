@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import math
+import re
 
 import model_zoo_train as model_zoo
 import support_function as sf
@@ -13,19 +14,22 @@ from tensorflow.python import debug as tf_debug
 
 # configuration
 # example: --which=jester --video_root_path=/home/wonhee/2-dataset --batch_size=8
-tf.app.flags.DEFINE_integer("batch_size", 4, "batch size") # 8
-tf.app.flags.DEFINE_float("learning_rate", 1e-1, "learning rate")
+tf.app.flags.DEFINE_integer("batch_size", 2, "batch size") # 8
+tf.app.flags.DEFINE_float("learning_rate", 1e-4, "learning rate")
 
 tf.app.flags.DEFINE_integer("k_fold", 5, "data ratio")
 tf.app.flags.DEFINE_bool("enable_k_fold", True, "enable k fold")
 
 tf.app.flags.DEFINE_string("model", 'mtsi3d', "which model to use")      # resnetl10/i3d/mtsi3d
+tf.app.flags.DEFINE_string("mode_pretrained", 'i3d', "which model to load")      # 'i3d' / 'mtsi3d'/ None
+tf.app.flags.DEFINE_string("pretrained_model_path", 'pretrained/i3d-tensorflow/kinetics-i3d/data/kinetics_i3d/model', "path of the pretrained model to load")
+# tf.app.flags.DEFINE_string("pretrained_model_path", '/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/save_model/i3d_ABR_action-finetune', "path of the pretrained model to load")
 
 # tf.app.flags.DEFINE_string("video_root_path", '/media/pjh/HDD2/Dataset/STAIR-actions-master/STAIR_Actions_v1.1-25frames', "video root path")
 # tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug"], "video root path")
 tf.app.flags.DEFINE_string("video_root_path", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug", "video root path")
 # tf.app.flags.DEFINE_string("which", 'STAIR', "which annotation to use")
-tf.app.flags.DEFINE_string("which", 'ABR_action_cropped-{}'.format(1), "which annotation to use")
+tf.app.flags.DEFINE_string("which", 'ABR_action_cropped-{}'.format(2), "which annotation to use")
 
 tf.app.flags.DEFINE_string("log_dir", '/home/pjh/PycharmProjects/action-prediction/tensorboard', 'loss log directory for tensorboard')
 
@@ -36,6 +40,9 @@ tf.app.flags.DEFINE_string("gpu", '0', 'which gpu to use')
 FLAGS = tf.app.flags.FLAGS
 
 os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.gpu
+
+from tensorflow.python.client import device_lib
+# print(device_lib.list_local_devices())
 
 video_root_path = FLAGS.video_root_path # os.path.join(FLAGS.video_root_path, FLAGS.which)
 
@@ -55,7 +62,7 @@ print('model_path: ', model_path)
 if not os.path.exists(model_path):
     os.makedirs(model_path)
 """
-saved_path = '/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/save_model/i3d_ABR_action-finetune'
+# saved_path = '/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/save_model/i3d_ABR_action-finetune'
 
 # model_path = '/media/pjh/HDD2/Dataset/save_model/i3d-STAIR-finetune'
 model_root = '/media/pjh/HDD2/Dataset'
@@ -134,7 +141,7 @@ elif model == 'i3d':
 
 elif model == 'mtsi3d':
     net = model_zoo.multiscaleI3DNet(inps=inputs, n_class=n_class, batch_size=batch_size,
-                           pretrained_model_path='pretrained/i3d-tensorflow/kinetics-i3d/data/kinetics_i3d/model',
+                           pretrained_model_path=FLAGS.pretrained_model_path,
                            final_end_point='Logits', dropout_keep_prob=dropout_keep_prob,
                            is_training=is_training, scope='v/SenseTime_I3D')
 
@@ -192,13 +199,44 @@ if hasattr(net, 'assign_ops'):
 # saver = tf.train.Saver(max_to_keep=20)
 saver = tf.train.Saver(max_to_keep=150)      # max_to_keep default value is 5
 
-ckpt = tf.train.latest_checkpoint(saved_path)
-
 summary_writer = tf.summary.FileWriter(FLAGS.log_dir, sess.graph)
 
-if ckpt:
-    print( 'restore from {}...'.format(ckpt))
-    saver.restore(sess, ckpt)
+if FLAGS.mode_pretrained == 'mtsi3d':
+    ckpt = tf.train.latest_checkpoint(FLAGS.pretrained_model_path)
+
+    if ckpt:
+        print( 'restore from {}...'.format(ckpt))
+        saver.restore(sess, ckpt)
+elif FLAGS.mode_pretrained == 'i3d':
+    # variables = tf.contrib.slim.get_variables_to_restore()
+    # print(variables)
+
+    variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='v/SenseTime_I3D')
+
+    # variables_to_restore = []
+    # var_dict = {re.sub(r':\d*', '', v.name): v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='v/SenseTime_I3D')}
+    # for var_name, var_shape in tf.contrib.framework.list_variables(FLAGS.pretrained_model_path):
+    #     if var_name.startswith('v/SenseTime_I3D/Logits'):
+    #         continue
+    #     # load variable
+    #     var = tf.contrib.framework.load_variable(FLAGS.pretrained_model_path, var_name)
+    #     assign_op = var_dict[var_name].assign(var)
+    #     variables_to_restore.append(assign_op)
+
+    variables_to_restore = []
+    ckpt_vars = [name for name, shape in tf.train.list_variables(FLAGS.pretrained_model_path)]
+    # print(ckpt_vars[:3])
+    for v in variables:
+        if (v.name.split(':')[0] not in ckpt_vars) | (v.name.startswith('v/SenseTime_I3D/Logits')):
+            # print(v.name)
+            continue
+        # print(v)
+        variables_to_restore.append(v)
+
+    if variables_to_restore:
+        print('restore from {}...'.format(FLAGS.pretrained_model_path))
+        saver_pretrained = tf.train.Saver(variables_to_restore)
+        saver_pretrained.restore(sess, FLAGS.pretrained_model_path)
 
 # start = -1 if not ckpt else int(os.path.basename(ckpt).split('-')[-1])
 start = -1
@@ -216,7 +254,11 @@ for epoch in range(start+1, epochs):
     train_acc = 0
     train_cur_acc = 0
     for start, end in zip(range(0, len(train_videos), batch_size), range(batch_size, len(train_videos), batch_size)):
+        if (end - start) != batch_size:
+            print("start batch: {}, end batch: {}".format(start, end))
+            continue
         train_frames = sf.preprocess_frame(train_videos[start:end])
+        print(train_frames.shape)
         train_intention = train_intention_data[start:end]
 
         feed_dic = {inputs: train_frames,
