@@ -44,6 +44,21 @@ Val dataset : 1430 videos
 (ratio of train/val : 8.96)
 ```
 
+* Breakfast dataset
+* 10 action classes in the kitchen
+```
+coffee (n=200)
+orange juice (n=187)
+chocolate milk (n=224)
+tea (n=223)
+bowl of cereals (n=214)
+fried eggs (n=198)
+pancakes (n=173)
+fruit salad (n=185)
+sandwich (n=197)
+scrambled eggs (n=188).
+```
+
 ## Requirements
 Download darknet and move the folder of 'darknet/' below the root directory of 'action_anticipation/'. (reference : [here](https://pgmrlsh.tistory.com/4))
 
