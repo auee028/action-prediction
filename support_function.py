@@ -65,7 +65,7 @@ def get_HRI(root, text_path):
 
 
 def get_HRI_v2(list_root, list_text_path):
-    filename_lb2ix = 'label_to_ix-ABR_action-aug.pkl'
+    filename_lb2ix = 'label_to_ix-multiscale-ceslea.pkl'
 
     len_root = len(list_root)
     len_text_path = len(list_text_path)
@@ -213,6 +213,7 @@ def add_s_p_noise(frame, amount):
 
 
 def preprocess_frame(video_batch):
+    maxlen = 64
 
     # start_time = time.time()
     frame_batch = []
@@ -230,15 +231,22 @@ def preprocess_frame(video_batch):
 
             frame_list.append(frame)
 
+        # frame sampling
+        if len(frame_list) > maxlen:
+            center_frame_idx = len(frame_list) / 2
+            new_start_idx = center_frame_idx - (maxlen / 2)
+            frame_list = frame_list[new_start_idx:new_start_idx + maxlen]
+
         frame_batch.append(frame_list)
 
     # zero-padding through time axis
     # maxlen = max(map(lambda frame: len(frame), frame_batch))
-    maxlen = 64
+    # maxlen = 64
     frame_batch = np.array(map(lambda frame: frame + [np.zeros_like(frame[0])]*(maxlen-len(frame)), frame_batch))
 
     # end_time = time.time()
     # print('preprocess time:', end_time-start_time)
+    # print(frame_batch.shape)
     return frame_batch
 
 
@@ -302,3 +310,19 @@ def cross_validation(videos, intention_data, k_fold, k_fold_status, n_class):
     valid_intention_data = np.array(valid_intention_data)
 
     return train_videos, train_intention_data, valid_videos, valid_intention_data
+
+
+if __name__=="__main__":
+    # files_list = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/ces_gesture_val.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_val.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_5th_val.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_3th_val.txt"]
+    files_list = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_train.txt"]
+    for video_file in files_list:
+        with open(video_file, 'r') as f:
+            info = f.readlines()
+        import tqdm
+        for l in tqdm.tqdm(info):
+            v_path = l.strip().split('\t')[0]
+            # print(v_path)
+            get_frames_data(v_path)
