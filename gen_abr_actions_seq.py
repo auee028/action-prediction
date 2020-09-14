@@ -52,7 +52,7 @@ def gen_action_seq_data(video_root, seq_map, new_vseq_root, new_anno_path):
     for seq_id, cur_seq in enumerate(seqs[:1]):
         cur_seq = cur_seq.replace('\t', ',')
         actions = cur_seq.strip().split(',')
-        actions_idx = [label2ix.index(a) for a in actions]
+        actions_idx = [label2ix.index(a.strip()) for a in actions]
         print(actions_idx)
 
         for person in video_dict.keys()[:1]:
