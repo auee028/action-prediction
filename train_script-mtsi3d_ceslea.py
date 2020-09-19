@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_integer("batch_size", 8, "batch size") # 8
 tf.app.flags.DEFINE_float("learning_rate", 1e-4, "learning rate")
 
 tf.app.flags.DEFINE_integer("k_fold", 5, "data ratio")
-tf.app.flags.DEFINE_bool("enable_k_fold", False, "enable k fold")
+tf.app.flags.DEFINE_bool("enable_k_fold", True, "enable k fold")
 
 tf.app.flags.DEFINE_string("model", 'mtsi3d', "which model to use")      # resnetl10/i3d/mtsi3d
 tf.app.flags.DEFINE_string("mode_pretrained", 'i3d', "which model to load")      # 'i3d' / 'mtsi3d'/ None
@@ -33,13 +33,19 @@ tf.app.flags.DEFINE_string("pretrained_model_path", 'pretrained/i3d-tensorflow/k
 # tf.app.flags.DEFINE_string("video_root_path", '/media/pjh/HDD2/Dataset/STAIR-actions-master/STAIR_Actions_v1.1-25frames', "video root path")
 # tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug"], "video root path")
 # tf.app.flags.DEFINE_string("video_root_path", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug", "video root path")
-tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces_gesture/videos",
-                                               "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR_action_partdet",
-                                               "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR_action_5th_partdet",
-                                               "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR-3th_partdet_slided"], "video root path")
+# tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces_gesture/videos",
+#                                                "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR_action_partdet",
+#                                                "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR_action_5th_partdet",
+#                                                "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR-3th_partdet_slided"], "video root path")
+# tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-5th/ABR_action_partdet",
+#                                                "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR_action_5th_partdet",
+#                                                "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR-3th_partdet_slided"], "video root path")
+tf.app.flags.DEFINE_string("video_root_path", "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR_action_partdet", "video root path")
+# tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-5th/ABR_action_partdet",
+#                                                "/media/pjh/HDD2/Dataset/ces-demo-5th/ABR-3th_partdet_slided"], "video root path")
 
 # tf.app.flags.DEFINE_string("which", 'STAIR', "which annotation to use")
-tf.app.flags.DEFINE_string("which", 'ces_multiscale_{}'.format(nowDatetime), "which annotation to use")
+tf.app.flags.DEFINE_string("which", 'ces_v-MultiScale_I3D_ABR-action-partdet_{}'.format(nowDatetime), "which annotation to use")
 
 tf.app.flags.DEFINE_string("log_dir", '/home/pjh/PycharmProjects/action-prediction/tensorboard', 'loss log directory for tensorboard')
 
@@ -92,7 +98,19 @@ if FLAGS.enable_k_fold:
     # train_text_path = os.path.join(cwd, 'annotation/trainlist-{}.txt'.format(FLAGS.which))
     # print(train_text_path, video_root_path)
     # train_text_path = ["annotation/trainlist-ABR_action.txt", "annotation/trainlist-ABR_action-aug.txt"]
-    train_text_path = "annotation/trainlist-ABR_action-aug.txt"
+    # train_text_path = "annotation/trainlist-ABR_action-aug.txt"
+    # train_text_path = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_train.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_5th_train.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_3th_train.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_val.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_5th_val.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_3th_val.txt"]
+    # train_text_path = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_newaction_train.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_newaction_5th_train.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_newaction_3th_train.txt"]
+    train_text_path = "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action-all_train.txt"
+    # train_text_path = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action-all_train.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action-all_3th_train.txt"]
 
     videos, intention_data, n_class = sf.get_HRI(video_root_path, train_text_path)
     # videos, intention_data, n_class = sf.get_HRI_v2(video_root_path, train_text_path)
@@ -114,10 +132,13 @@ else:
     # train_text_path = os.path.join(cwd, 'annotation/trainlist-{}.txt'.format(FLAGS.which))
     # train_text_path = ["annotation/trainlist-ABR_action.txt", "annotation/trainlist-ABR_action-aug.txt"]
     # train_text_path = ["annotation/trainlist-ABR_action-aug.txt"]
-    train_text_path = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/ces_gesture_train.txt",
-                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_train.txt",
-                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_5th_train.txt",
-                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_3th_train.txt"]
+    # train_text_path = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/ces_gesture_train.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_train.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_5th_train.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_3th_train.txt"]
+    train_text_path = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_train.txt",
+                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_5th_train.txt",
+                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_3th_train.txt"]
 
     # train_videos, train_intention_data, n_class = sf.get_HRI(frame_path, train_text_path)
     train_videos, train_intention_data, n_class = sf.get_HRI_v2(frame_path, train_text_path)
@@ -128,10 +149,13 @@ else:
     # valid_text_path = os.path.join(cwd, 'annotation/vallist-{}.txt'.format(FLAGS.which))
     # valid_text_path = ["annotation/vallist-ABR_action.txt", "annotation/vallist-ABR_action-aug.txt"]
     # valid_text_path = ["annotation/vallist-ABR_action-aug.txt"]
-    valid_text_path = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/ces_gesture_val.txt",
-                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_val.txt",
-                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_5th_val.txt",
-                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_3th_val.txt"]
+    # valid_text_path = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/ces_gesture_val.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_val.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_5th_val.txt",
+    #                    "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/abr_action_3th_val.txt"]
+    valid_text_path = ["/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_val.txt",
+                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_5th_val.txt",
+                       "/media/pjh/HDD2/Dataset/ces-demo-5th/annotations/new-abr_action_3th_val.txt"]
 
     # valid_videos, valid_intention_data, _ = sf.get_HRI(frame_path, valid_text_path)
     valid_videos, valid_intention_data, _ = sf.get_HRI_v2(frame_path, valid_text_path)
@@ -163,12 +187,16 @@ elif model == 'mtsi3d':
     net = model_zoo.multiscaleI3DNet(inps=inputs, n_class=n_class, batch_size=batch_size,
                            pretrained_model_path=FLAGS.pretrained_model_path,
                            final_end_point='Logits', dropout_keep_prob=dropout_keep_prob,
-                           is_training=is_training, scope='v/SenseTime_I3D')
+                           is_training=is_training, scope='v/MultiScale_I3D')
 
 else:
     raise NameError('can not find the model')
 
 logits = net(inps=inputs)
+
+# Make saver at the end of weights to save - not to save useless variables after the model
+# saver = tf.train.Saver(max_to_keep=20)
+saver = tf.train.Saver(max_to_keep=150)      # max_to_keep default value is 5
 
 # loss
 one_hot_targets = tf.one_hot(targets, n_class, dtype='float32')
@@ -216,8 +244,6 @@ if hasattr(net, 'assign_ops'):
     # init all variables with pre-trained i3d
     sess.run(net.assign_ops)
 
-# saver = tf.train.Saver(max_to_keep=20)
-saver = tf.train.Saver(max_to_keep=150)      # max_to_keep default value is 5
 
 summary_writer = tf.summary.FileWriter(FLAGS.log_dir, sess.graph)
 
@@ -227,6 +253,7 @@ if FLAGS.mode_pretrained == 'mtsi3d':
     if ckpt:
         print( 'restore from {}...'.format(ckpt))
         saver.restore(sess, ckpt)
+
 elif FLAGS.mode_pretrained == 'i3d':
     # variables = tf.contrib.slim.get_variables_to_restore()
     # print(variables)

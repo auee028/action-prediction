@@ -61,15 +61,38 @@ class multiscaleI3DNet:
 
         var_dict = { re.sub(r':\d*','',v.name):v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=scope) }
         self.assign_ops = []
-        for var_name, var_shape in tf.contrib.framework.list_variables(pretrained_model_path):
-            if var_name.startswith('v/SenseTime_I3D/Logits'):
-                continue
-            if not var_name.startswith('v/SenseTime_I3D'):
-                continue
-            # load variable
-            var = tf.contrib.framework.load_variable(pretrained_model_path, var_name)
-            assign_op = var_dict[var_name].assign(var)
-            self.assign_ops.append(assign_op)
+        if pretrained_model_path:
+            for var_name, var_shape in tf.contrib.framework.list_variables(pretrained_model_path):
+                if var_name.startswith('v/SenseTime_I3D/Logits'):
+                    continue
+                # load variable
+                var = tf.contrib.framework.load_variable(pretrained_model_path, var_name)
+                assign_op = var_dict[var_name.replace('v/SenseTime_I3D', scope)].assign(var)
+                self.assign_ops.append(assign_op)
+
+            print(var_dict.keys())
+            '''
+            # print(var_dict.keys())
+            i = 0
+            for var_name, var_shape in tf.contrib.framework.list_variables(pretrained_model_path):
+                try:
+                    if var_name.startswith('v/SenseTime_I3D/Logits'):
+                        continue
+                    if not var_name.startswith('v/SenseTime_I3D'):
+                        continue
+                    if not var_name in var_dict.keys():
+                        continue
+    
+                    # load variable
+                    var = tf.contrib.framework.load_variable(pretrained_model_path, var_name)
+                    assign_op = var_dict[var_name].assign(var)
+                    self.assign_ops.append(assign_op)
+    
+                    i += 1
+                    print(i, var_name, var.shape, var_dict[var_name].shape)
+                except:
+                    continue
+            '''
 
     def __call__(self, inps):
         out, _ = mtsi3d.MultiscaleI3D(preprocess(inps, self.batch_size, self.is_training),
@@ -81,8 +104,25 @@ class multiscaleI3DNet:
                                       scope=self.scope,
                                       reuse=True)
 
-        return out
+        # out, end_points = mtsi3d.MultiscaleI3D(preprocess(inps, self.batch_size, self.is_training),
+        #                               num_classes=self.n_class,
+        #                               batch_size=self.batch_size,
+        #                               is_training=self.is_training,
+        #                               final_endpoint=self.final_end_point,
+        #                               dropout_keep_prob=self.dropout_keep_prob,
+        #                               scope=self.scope,
+        #                               reuse=True)
+        #
+        # feat1 = end_points['MaxPool3d_3a_1x3x3']
+        # feat2 = end_points['MaxPool3d_4a_3x3x3']
+        # feat3 = end_points['MaxPool3d_5a_2x2x2']
+        #
+        # out = mtsi3d.FeatureEmbedding([feat1, feat2, feat3, out],
+        #                               num_classes=self.n_class,
+        #                               batch_size=self.batch_size,
+        #                               final_endpoint='Logits')
 
+        return out
 
 
 class I3DNet:
