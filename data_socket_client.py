@@ -17,13 +17,13 @@ def recv(csoc, count):
         count -= len(newbuf)
     return buf
 
-def send_video(ip, port):
+def send_video():
     csoc = socket(AF_INET, SOCK_STREAM)
     # csoc.connect(('127.0.0.1', 5050))
-    csoc.connect((ip, port))
+    csoc.connect((args.ip, args.port))
 
     video_root = "/media/pjh/HDD2/Dataset/ces-demo-5th"
-    video_root = os.path.join(video_root, datetime.datetime.now().strftime("%m%d"), "profLee")
+    video_root = os.path.join(video_root, datetime.datetime.now().strftime("%m%d"), args.usrname)
     if not os.path.exists(video_root):
         os.makedirs(video_root)
 
@@ -47,13 +47,13 @@ def send_video(ip, port):
             with open(os.path.join(video_root, file_name), 'wb') as file:
                 file.write(video)
 
-            file_count += 1
-
-            print("{}\t{}".format(file_count, file_name))
-
-            if file_count == 100:
-                csoc.close()
-                break
+            # file_count += 1
+            #
+            # print("{}\t{}".format(file_count, file_name))
+            #
+            # if file_count == 200:
+            #     csoc.close()
+            #     break
 
         except Exception as e :
             print(e)
@@ -69,8 +69,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="data collection client")
     parser.add_argument('--ip', type=str, default='127.0.0.1')
     parser.add_argument('--port', type=int, default=5050)
+    parser.add_argument('--usrname', type=str, default="profLee")
 
     args = parser.parse_args()
 
     # main_loop()
-    main_loop(args.ip, args.port)
+    main_loop()

@@ -45,7 +45,7 @@ def sampling_frames(input_frames, sampling_num):
             out_frames.append(input_frames[-1])
 
     return out_frames
-
+'''
 def pred_action_orig(frames):
     # action_model = TFModel()
     action_model = TFModel(os.path.join('save_model', 'i3d'))
@@ -85,7 +85,7 @@ def pred_action_crop(frames):
         result = 'None'
 
     return result, confidence_3, top_3
-
+'''
 def calc_framediff(clip):
     value_list = []
     for idx in range(len(clip)-1):
@@ -182,7 +182,7 @@ def main_loop():
 
                     time.sleep(0.01)
 
-
+                    '''
                     pred_start_time = time.time()
                     # get the value of frame variances(abs difference)
                     if calc_framediff(frames) < 34.25:  # Avg. diff of 100 samples : 34.2453916243 -> 34.25
@@ -212,9 +212,14 @@ def main_loop():
 
                     date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                     total_frames = len(frames)
-                    name = "profLee"
 
-                    file_name = '{}_{}_{}_{}_{}.avi'.format(date, total_frames, name, result, confidence_3[0])
+                    file_name = '{}_{}_{}_{}_{}.avi'.format(date, total_frames, usrname, result, confidence_3[0])
+                    print(file_name)
+                    '''
+                    date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    total_frames = len(frames)
+
+                    file_name = '{}_{}_{}.avi'.format(date, total_frames, usrname)
                     print(file_name)
 
                     start_send = time.time()
@@ -230,6 +235,10 @@ def main_loop():
 
                     #time.sleep(0.01)
                     # csoc.close()
+
+
+
+
     except Exception as e:
         csoc.close()
         print("ERROR:", e)
@@ -245,8 +254,11 @@ if __name__ == '__main__':
                         default=480)  # DEPTH : 1280x720, 848x480, 640x480, 640x360, 480x270, 424x240
     parser.add_argument('--fps', type=int, default=15)  # 6, 15(1920~424), 30(1280~320), 60
 
+    parser.add_argument('--usrname', type=str, default="profLee")
+
     args = parser.parse_args()
 
+    usrname = args.usrname
 
     cap = cv2.VideoCapture(args.cam)
     # self.cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_01_643.avi')
@@ -256,7 +268,7 @@ if __name__ == '__main__':
 
     camera = Camera()
 
-    model = TFModel()
+    # model = TFModel()
 
     yolo = load_net("./darknet/cfg/yolov3.cfg", "./darknet/cfg/yolov3.weights", 0)
     meta = load_meta("./darknet/cfg/coco.data")
