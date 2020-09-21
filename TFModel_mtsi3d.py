@@ -26,18 +26,21 @@ cwd = os.getcwd()
 # model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', 'i3d-ABR_action_augmented-{}'.format(4))
 # ckpt_num = 24
 
-model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', 'mtsi3d-ABR_action_cropped-{}'.format(2))
-ckpt_num = 15
+# model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', 'mtsi3d-ABR_action_cropped-{}'.format(2))
+# ckpt_num = 15
+
+model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', 'mtsi3d-ces_v-MultiScale_I3D_ABR-action-partdet_2020-09-19_14-32-45')
+ckpt_num = 25
 
 class TFModel:
-    def __init__(self):
+    def __init__(self, scope_name):
         self.inputs = tf.placeholder(dtype=tf.float32, shape=[None, 64, 224, 224, 3])
         self.is_training = tf.placeholder(dtype=tf.bool)
 
         # build multiscaleI3D net
         self.net = model_zoo.multiscaleI3DNet(inps=self.inputs, n_class=len(ix2label), batch_size=1,
                                     pretrained_model_path=None, final_end_point='Logits',
-                                    dropout_keep_prob=1.0, is_training=self.is_training)
+                                    dropout_keep_prob=1.0, is_training=self.is_training, scope='v/MultiScale_I3D')
 
         # logits from multiscaleI3D net
         out, merge_op = self.net(self.inputs)
