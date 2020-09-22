@@ -103,15 +103,18 @@ class multiscaleI3DNet:
         var_dict = { re.sub(r':\d*','',v.name):v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=scope) }
         self.assign_ops = []
         if pretrained_model_path:
+            print('restore from {}...'.format(pretrained_model_path))
+
             for var_name, var_shape in tf.contrib.framework.list_variables(pretrained_model_path):
-                if var_name.startswith('v/SenseTime_I3D/Logits'):
-                    continue
-                if not var_name.startswith('v/SenseTime_I3D'):
+                # if var_name.startswith('v/SenseTime_I3D/Logits'):
+                #     continue
+                if not var_name.startswith(self.scope):
                     continue
                 # load variable
                 var = tf.contrib.framework.load_variable(pretrained_model_path, var_name)
                 assign_op = var_dict[var_name].assign(var)
                 self.assign_ops.append(assign_op)
+
 
     def __call__(self, inps):
         proc = preprocess(inps,self.batch_size,self.is_training)
