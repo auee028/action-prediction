@@ -29,7 +29,8 @@ cwd = os.getcwd()
 # model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', 'mtsi3d-ABR_action_cropped-{}'.format(2))
 # ckpt_num = 15
 
-model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', 'mtsi3d-ces_v-MultiScale_I3D_ABR-action-partdet_2020-09-19_14-32-45/step-25')
+# model_path = os.path.join('/media/pjh/HDD2/Dataset/save_model', 'mtsi3d-ces_v-MultiScale_I3D_ABR-action-partdet_2020-09-19_14-32-45/step-25')
+model_path = os.path.join('/home/pjh/PycharmProjects/action-prediction/save_model', 'mtsi3d-ces_action-all_5th_mtsi3d_lr1e-3')
 
 class TFModel:
     def __init__(self):
@@ -38,8 +39,8 @@ class TFModel:
 
         # build multiscaleI3D net
         self.net = model_zoo.multiscaleI3DNet(inps=self.inputs, n_class=len(ix2label), batch_size=1,
-                                    pretrained_model_path=model_path, final_end_point='Logits',
-                                    dropout_keep_prob=1.0, is_training=self.is_training, scope='v/MultiScale_I3D')
+                                    pretrained_model_path=None, final_end_point='Logits',
+                                    dropout_keep_prob=1.0, is_training=self.is_training, scope='v/SenseTime_I3D')
 
         # logits from multiscaleI3D net
         out, merge_op = self.net(self.inputs)
@@ -57,17 +58,17 @@ class TFModel:
         # self.logger = tf.summary.FileWriter('./log', self.sess.graph)
         self.sess.run(tf.global_variables_initializer())
 
-        '''
+
         saver = tf.train.Saver()
 
-        # ckpt = tf.train.latest_checkpoint(model_path)
-        #
-        # if ckpt:
-        #     print('restore from {}...'.format(ckpt))
-        #     saver.restore(self.sess, ckpt)
+        ckpt = tf.train.latest_checkpoint(model_path)
 
+        if ckpt:
+            print('restore from {}...'.format(ckpt))
+            saver.restore(self.sess, ckpt)
+        '''
         ckpt_state = tf.train.get_checkpoint_state(model_path)
-
+        
         if ckpt_state:
             ckpt = ckpt_state.all_model_checkpoint_paths[ckpt_num]
 
