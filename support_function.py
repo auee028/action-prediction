@@ -111,12 +111,12 @@ def get_HRI_v2(list_root, list_text_path):
             txt['path'] = txt['path'].map(lambda x: os.path.join(root, x))
             txt = txt[txt['path'].map(lambda x: os.path.exists(x))]
             # print(type(txt))
-            # print(len(txt['path'].values))
+            print(len(txt['path'].values))
         else:
             df_tmp = pd.read_table(text_path, dtype=str, sep='\t', names={'path', 'label'})
             df_tmp['path'] = df_tmp['path'].map(lambda x: os.path.join(root, x))
             df_tmp = df_tmp[df_tmp['path'].map(lambda x: os.path.exists(x))]
-            # print(len(df_tmp['path'].values))
+            print(len(df_tmp['path'].values))
 
             txt = pd.concat([txt, df_tmp])
     print("number of videos : {}".format(len(txt)))
@@ -124,7 +124,7 @@ def get_HRI_v2(list_root, list_text_path):
     label_set = natsorted(set(txt['label']))
 
     label_to_ix = dict(zip(list(label_set), range(len(label_set))))
-    # print(label_set)
+    print(label_set)
 
     # with open('categories.txt', 'w') as txt:
     #     txt.write(str(label_set))
@@ -134,7 +134,13 @@ def get_HRI_v2(list_root, list_text_path):
 
     n_intention = len(label_set)
 
-    np.random.shuffle(txt['path'].values)
+    # Shuffle
+    # print(type(txt['path']), type(txt['path'].values), len(txt['path'].values))
+    idx = np.arange(len(txt['path'].values))
+    np.random.shuffle(idx)
+
+    txt['path'] = txt['path'].values[idx]
+    txt['label'] = txt['label'].values[idx]
     # print(txt['path'].values[:100])
 
 
@@ -213,7 +219,8 @@ def add_s_p_noise(frame, amount):
 
 
 def preprocess_frame(video_batch):
-    maxlen = 64
+    maxlen = 64    # for mtsi3d model
+    # maxlen = 16      # for c3d model
 
     # start_time = time.time()
     frame_batch = []
@@ -223,7 +230,8 @@ def preprocess_frame(video_batch):
         random_var = random.randint(1, 200)
         random_amount = random.randint(10, 200)
         for frame in frame_sampled:
-            frame = crop_frame(frame, CROP_SIZE=224)
+            frame = crop_frame(frame, CROP_SIZE=224)	# for mtsi3d model
+            # frame = crop_frame(frame, CROP_SIZE=112)	# for c3d model
             # TODO: add color augmentation
             # ex: brightness, contrast, saturation, hue, lightingAug
             # frame = change_contrast(frame, random_var)
