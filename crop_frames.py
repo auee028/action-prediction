@@ -47,10 +47,19 @@ def CropFrames(yolo, meta, frames):
 
         x, y, w, h = biggest_person[-1]
 
+
         x0 = int(x - w / 2)
         y0 = int(y - h / 2)
         x1 = int(x + w / 2)
         y1 = int(y + h / 2)
+
+        ratio = 1.2
+        if h > w * ratio:
+            y1 = int(y + w * ratio / 2)
+
+        # image = cv2.rectangle(image, (x0, y0), (x1, y1), (255, 255, 0), 3)
+        # cv2.imshow("image", image)
+        # cv2.waitKey(50)
 
         x_list.append([x0, x1])
         y_list.append([y0, y1])
@@ -158,6 +167,8 @@ def CropFrames(yolo, meta, frames):
     for image in frames:
         new_image = image[y_min:y_max, x_min:x_max, :]
         new_image = cv2.resize(new_image, (224, 224))
+        # cv2.imshow("show", new_image)
+        # cv2.waitKey(50)
         new_frames.append(new_image)
 
     return np.array(new_frames)
