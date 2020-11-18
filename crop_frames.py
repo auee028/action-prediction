@@ -20,6 +20,7 @@ def CropFrames(yolo, meta, frames):
 
         r = np_detect(yolo, meta, image)  # (meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h))
 
+        """
         if len(r) >= 2:
             area = -1
             area_idx = -1
@@ -40,6 +41,19 @@ def CropFrames(yolo, meta, frames):
 
             x_list.append([x0, x1])
             y_list.append([y0, y1])
+        """
+
+        biggest_person = r[0]
+
+        x, y, w, h = biggest_person[-1]
+
+        x0 = int(x - w / 2)
+        y0 = int(y - h / 2)
+        x1 = int(x + w / 2)
+        y1 = int(y + h / 2)
+
+        x_list.append([x0, x1])
+        y_list.append([y0, y1])
 
     '''
     Step 2. Get min, max of overall moving area in x, y axis
@@ -147,3 +161,5 @@ def CropFrames(yolo, meta, frames):
         new_frames.append(new_image)
 
     return np.array(new_frames)
+
+
