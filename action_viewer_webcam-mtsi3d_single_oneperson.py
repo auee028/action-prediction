@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     # cap = cv2.VideoCapture('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/sample/200205/2020-02-05-17-49-01_00_415.avi')
     # cap = cv2.VideoCapture('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/sample/200206/demo_samples/2020-02-06/10_reading-blowing nose-reading-blowing nose-reading-blowing nose/2020-02-06-15-01-50_00_1024.avi')
-    cap = cv2.VideoCapture(args.cam)
+    # cap = cv2.VideoCapture(args.cam)
     # cap = cv2.VideoCapture('sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
     # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/youtube/drama_0002.mp4')
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0109/Amin/1/2020-01-09-15-21-07_00_84.avi')    # sitting
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0113/jeongwoo/12/2020-01-10-18-15-12_00_86.avi')
     # cap = cv2.VideoCapture('/home/pjh/Videos/test_vid.avi')
     # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
-    # cap = cv2.VideoCapture('/home/pjh/Videos/Alley-39837.mp4')
+    cap = cv2.VideoCapture('/home/pjh/Videos/Alley-39837.mp4')    # Camera-26531.mp4
     cap.set(3, args.width)
     cap.set(4, args.height)
     cap.set(5, args.fps)

@@ -6,15 +6,19 @@ sys.setdefaultencoding('utf-8')       # python 3 doesn't need this
 
 import cv2
 import copy
+import glob
+import natsort
 import numpy as np
 import math
+import tensorflow as tf
 
 import time
 import argparse
 
 from crop_frames import CropFrames
+# from TFModel import TFModel
+# from TFModel_twoI3D import TFModel# as TFModel_cropped
 from TFModel_mtsi3d import TFModel
-
 import requests
 
 from darknet.python.darknet import *
@@ -40,7 +44,7 @@ def sampling_frames(input_frames, sampling_num):
 
     return out_frames
 
-def pred_action(frames):
+def pred_action_orig(frames):
     result, confidence, top_3 = action_model.run_demo_wrapper(np.expand_dims(frames, 0))
 
     if confidence > 0.7 and result != 'Doing other things':
@@ -57,6 +61,31 @@ def pred_action(frames):
         result = None
 
     return result, confidence, top_3
+
+
+def calc_framediff(clip):
+    value_list = []
+    for idx in range(len(clip)-1):
+        prev_frame = clip[idx]
+        prev_frame = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+        curr_frame = clip[idx+1]
+        curr_frame = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
+
+        frame_diff = cv2.absdiff(prev_frame, curr_frame)
+        frame_diff = np.array(frame_diff, dtype=np.int32)
+
+        value_list.append(np.sum(frame_diff))
+
+    # print(max(value_list), min(value_list))
+
+    # scaling values to [0-1] range using formula
+    for i in range(len(value_list)):
+        value_list[i] = float(value_list[i] - np.min(value_list)) / (np.max(value_list) - np.min(value_list))
+
+    # value_diff = sum(value_list)/len(value_list)
+    # print(value_diff)
+    # print(sum(value_list))
+    return sum(value_list)
 
 
 if __name__ == '__main__':
@@ -77,11 +106,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    action_model = TFModel()
-
     # cap = cv2.VideoCapture('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/sample/200205/2020-02-05-17-49-01_00_415.avi')
     # cap = cv2.VideoCapture('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/sample/200206/demo_samples/2020-02-06/10_reading-blowing nose-reading-blowing nose-reading-blowing nose/2020-02-06-15-01-50_00_1024.avi')
-    cap = cv2.VideoCapture(args.cam)
+    # cap = cv2.VideoCapture(args.cam)
     # cap = cv2.VideoCapture('sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
     # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/youtube/drama_0002.mp4')
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0109/Amin/1/2020-01-09-15-21-07_00_84.avi')    # sitting
@@ -89,7 +116,9 @@ if __name__ == '__main__':
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0110/Juhee/4/2020-01-09-17-27-09_00_99.avi')     # reading
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0113/jeongwoo/12/2020-01-10-18-15-12_00_86.avi')
     # cap = cv2.VideoCapture('/home/pjh/Videos/test_vid.avi')
-    # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
+    cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_01_643.avi')
+    # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/12_reading- talking on a phone-leaving the office/2020-02-06-15-09-17_01_391.avi')
+
     cap.set(3, args.width)
     cap.set(4, args.height)
     cap.set(5, args.fps)
@@ -97,6 +126,8 @@ if __name__ == '__main__':
     # # to save the video result
     # fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
     # writer = cv2.VideoWriter('/home/pjh/Videos/test-arbitrary.avi', fourcc, 30.0, (args.width, args.height))
+
+    action_model = TFModel()
 
     frames = []
     sampled_frames = []
@@ -108,6 +139,7 @@ if __name__ == '__main__':
     action_list = []
     intent_list = []
     intent_result = ''
+    cnt = 0
 
     yolo = load_net("./darknet/cfg/yolov3.cfg", "./darknet/cfg/yolov3.weights", 0)
     meta = load_meta("./darknet/cfg/coco.data")
@@ -121,11 +153,18 @@ if __name__ == '__main__':
         if not ret:
             break
 
+        # ret, jpeg = cv2.imencode('.jpg', cv2.resize(frame, (320, 240)))
+        # stream = jpeg.tobytes()
+        #
+        # # for ROI streaming
+        # requests.post('http://127.0.0.1:5000/update_stream', data=stream)
+
         display_frame = copy.deepcopy(frame)
         display_frame = cv2.resize(display_frame, (224, 224))
 
         # cv2.imshow('frame', display_frame)
         frame = cv2.resize(frame, (224, 224))
+        frame = cv2.flip(frame, 1)
 
         frames.append(frame)
         # print(frame_num, len(frames))
@@ -164,7 +203,8 @@ if __name__ == '__main__':
                 if diff_thresh >= args.frame_diff_thresh and not motion_detect:
                     start_frame = frame_num - 2
                     motion_detect = True
-                    print("start frame : {}\n".format(start_frame))
+                    cnt += 1
+                    print("{}\tstart frame : {}\n".format(cnt, start_frame))
                 # elif diff_thresh < 0.3 :
                 #     motion_detect = False
                 #     # sampled_frames = []
@@ -175,8 +215,7 @@ if __name__ == '__main__':
 
                     action_time = time.time()   # reset action_time
 
-                    # when the movement stops
-                    if diff_thresh < 0.1:# args.frame_diff_thresh:#frame_num >= start_frame + args.action_video_length:
+                    if diff_thresh < args.frame_diff_thresh:#frame_num >= start_frame + args.action_video_length:
 
                         # print(diff_thresh, start_frame, frame_num, len(frames), len(frames[start_frame:]))  #########
 
@@ -192,36 +231,22 @@ if __name__ == '__main__':
                             #     cv2.waitKey(500)
                             print('total frames : {}'.format(len(frames[start_frame:])))
 
-                            cv2.circle(display_frame, (50, 50), 20, (255, 0, 0), -1)  # 12  # blue
-                            cv2.imshow('frame', display_frame)
-
                             sampled_frames = sampling_frames(frames[start_frame:], args.action_video_length)
-                            '''
-                            save_frames = "/home/pjh/Videos/test-cam_{}_{}".format('mtsi3d', '5thdemo')
                             for num, f in enumerate(sampled_frames):
-                                cnt_action = str(len(action_list))
-                                if not os.path.exists(os.path.join(save_frames, cnt_action)):
-                                    os.makedirs(os.path.join(save_frames, cnt_action))
-                                cv2.imwrite(os.path.join(save_frames, cnt_action, '{}.jpg'.format(num)), f)
+                                if not os.path.exists('/home/pjh/Videos/test-arbitrary_parts/{}'.format(len(action_list))):
+                                    os.makedirs('/home/pjh/Videos/test-arbitrary_parts/{}'.format(len(action_list)))
+                                cv2.imwrite('/home/pjh/Videos/test-arbitrary_parts/{}/{}.jpg'.format(len(action_list), num), f)
                             #     # cv2.imshow('frame', frames[-(args.action_video_length-i)])
                             #     cv2.imshow('frame', f)
                             #     cv2.waitKey(300)
-                            '''
                             print('number of sampled frames : {}'.format(len(sampled_frames)))
 
-                            # crop all images
-                            cropped_frames = np.array(CropFrames(yolo, meta, sampled_frames))
+                            result, confidence, top_3 = pred_action_orig(sampled_frames)
+                            print("\torig  : {}, {}, {}".format(result, confidence, top_3))
 
-                            # zero padding in time-axis
-                            maxlen = 64
-                            preprocessed = np.array(cropped_frames.tolist() + [np.zeros_like(cropped_frames[0])] * (maxlen - len(cropped_frames)))
-                            cv2.imwrite('tmp/img.jpg', preprocessed[0])
+                            # requests.post(
+                            #     'http://127.0.0.1:5000/post/{}'.format(action))
 
-                            # result, confidence, top_3 = pred_action(sampled_frames)#pred_action(frames[-args.action_video_length:], frame_num)
-                            # result, confidence, top_3 = pred_action(cropped_frames)
-                            result, confidence, top_3 = pred_action(preprocessed)
-                            print("{}, {}, {}\n".format(result, confidence, top_3))
-                            # cv2.waitKey(0)
 
                             cv2.putText(display_frame, str(result), (100, 50), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255, 2))
                             event_end_frame = frame_num
@@ -232,9 +257,9 @@ if __name__ == '__main__':
                                 # action_end_frame = frame_num
                                 action_list.append(result)
 
-                                # if len(action_list) >= args.action_thresh:
-                                #     motion_detect = False
-                                #     break
+                                if len(action_list) >= args.action_thresh:
+                                    motion_detect = False
+                                    break
                             else:
                                 print("Do the previous action again ..\n")
 
@@ -254,7 +279,7 @@ if __name__ == '__main__':
         cv2.imshow('frame', display_frame)
         cv2.waitKey(50)
         # writer.write(display_frame)
-        # cv2.imwrite('/home/pjh/Videos/test-arbitrary_frames/{}.jpg'.format(frame_num), display_frame)
+        cv2.imwrite('/home/pjh/Videos/test-arbitrary_frames/{}.jpg'.format(frame_num), display_frame)
 
         # print(time.time() - prev_time)
         frame_num = frame_num + 1
@@ -284,9 +309,9 @@ if __name__ == '__main__':
 
     # try:
     #     # requests.post('http://155.230.24.109:50001/api/v1/actions/action/{}/{}'.format('home',action_list[-1]))
-    #     requests.get(
-    #         'http://192.168.0.4:3001/api/v1/actions/action/{}/{}'.format('home', action_list[-1]))
-    #     # requests.post('http://ceslea.ml:50001/api/v1/actions/action/{}/{}'.format('home',action_list[-1]))
+    #     # requests.get(
+    #     #     'http://192.168.0.4:3001/api/v1/actions/action/{}/{}'.format('home', action_list[-1]))
+    #     requests.post('http://ceslea.ml:50001/api/v1/actions/action/{}/{}'.format('home',action_list[-1]))
     #     print('send action')
     # except:
     #     pass

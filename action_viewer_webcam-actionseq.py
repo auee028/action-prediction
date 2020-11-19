@@ -178,11 +178,11 @@ if __name__ == '__main__':
         if not ret:
             break
 
-        ret, jpeg = cv2.imencode('.jpg', cv2.resize(frame, (320, 240)))
-        stream = jpeg.tobytes()
-
-        # for ROI streaming
-        requests.post('http://127.0.0.1:5000/update_stream', data=stream)
+        # ret, jpeg = cv2.imencode('.jpg', cv2.resize(frame, (320, 240)))
+        # stream = jpeg.tobytes()
+        #
+        # # for ROI streaming
+        # requests.post('http://127.0.0.1:5000/update_stream', data=stream)
 
         display_frame = copy.deepcopy(frame)
         display_frame = cv2.resize(display_frame, (224, 224))
@@ -282,8 +282,8 @@ if __name__ == '__main__':
                                 print("\torig  : {}, {}, {}".format(result, confidence, top_3))
                                 tf.reset_default_graph()
 
-                            requests.post(
-                                'http://127.0.0.1:5000/post/{}'.format(action))
+                            # requests.post(
+                            #     'http://127.0.0.1:5000/post/{}'.format(action))
 
 
                             cv2.putText(display_frame, str(result), (100, 50), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255, 2))

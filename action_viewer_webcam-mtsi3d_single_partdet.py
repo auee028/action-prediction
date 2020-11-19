@@ -12,12 +12,13 @@ import math
 import time
 import argparse
 
-from crop_frames import CropFrames
+# from crop_frames import CropFrames
 from TFModel_mtsi3d import TFModel
 
 import requests
 
 from darknet.python.darknet import *
+
 
 def sampling_frames(input_frames, sampling_num):
     total_num = len(input_frames)
@@ -62,7 +63,7 @@ def pred_action(frames):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="test TF on a single video")
     parser.add_argument('--caption_video_length', type=int, default=64)
-    parser.add_argument('--action_video_length', type=int, default=64)
+    parser.add_argument('--action_video_length', type=int, default=16)
     parser.add_argument('--action_thresh', type=int, default=20)
     parser.add_argument('--frame_thresh', type=int, default=10)
     parser.add_argument('--frame_diff_thresh', type=int, default=0.4)
@@ -81,7 +82,7 @@ if __name__ == '__main__':
 
     # cap = cv2.VideoCapture('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/sample/200205/2020-02-05-17-49-01_00_415.avi')
     # cap = cv2.VideoCapture('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/sample/200206/demo_samples/2020-02-06/10_reading-blowing nose-reading-blowing nose-reading-blowing nose/2020-02-06-15-01-50_00_1024.avi')
-    cap = cv2.VideoCapture(args.cam)
+    # cap = cv2.VideoCapture(args.cam)
     # cap = cv2.VideoCapture('sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
     # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/youtube/drama_0002.mp4')
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0109/Amin/1/2020-01-09-15-21-07_00_84.avi')    # sitting
@@ -90,6 +91,7 @@ if __name__ == '__main__':
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0113/jeongwoo/12/2020-01-10-18-15-12_00_86.avi')
     # cap = cv2.VideoCapture('/home/pjh/Videos/test_vid.avi')
     # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
+    cap = cv2.VideoCapture('/home/pjh/Videos/Alley-39837.mp4')
     cap.set(3, args.width)
     cap.set(4, args.height)
     cap.set(5, args.fps)
@@ -130,11 +132,15 @@ if __name__ == '__main__':
         frames.append(frame)
         # print(frame_num, len(frames))
 
+
         # detect
         r = np_detect(yolo, meta, frame)
 
         if len(r) >= 1:
             # cv2.circle(display_frame, (50, 50), 20, (255, 0, 0), -1)
+
+            # crop the current frame
+            cropped_frames = np.array(CropFrames(yolo, meta, sampled_frames))
 
             if len(frames) >= 5:
                 c_frame = frames[-1]
@@ -192,9 +198,6 @@ if __name__ == '__main__':
                             #     cv2.waitKey(500)
                             print('total frames : {}'.format(len(frames[start_frame:])))
 
-                            cv2.circle(display_frame, (50, 50), 20, (255, 0, 0), -1)  # 12  # blue
-                            cv2.imshow('frame', display_frame)
-
                             sampled_frames = sampling_frames(frames[start_frame:], args.action_video_length)
                             '''
                             save_frames = "/home/pjh/Videos/test-cam_{}_{}".format('mtsi3d', '5thdemo')
@@ -208,9 +211,6 @@ if __name__ == '__main__':
                             #     cv2.waitKey(300)
                             '''
                             print('number of sampled frames : {}'.format(len(sampled_frames)))
-
-                            # crop all images
-                            cropped_frames = np.array(CropFrames(yolo, meta, sampled_frames))
 
                             # zero padding in time-axis
                             maxlen = 64

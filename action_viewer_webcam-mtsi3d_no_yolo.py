@@ -13,11 +13,97 @@ import time
 import argparse
 
 from crop_frames import CropFrames
-from TFModel import TFModel
+from TFModel_mtsi3d import TFModel
 
 import requests
 
 from darknet.python.darknet import *
+
+
+
+class Camera:
+    def __init__(self):
+
+        self.move_detect = False
+        self.frame_diff_thresh = 0.001  #0.4
+
+        # # load yolo v3(tiny) and meta data
+        # self.yolo = load_net("./darknet/cfg/yolov3-tiny-voc.cfg", "./darknet/cfg/yolov3-tiny-voc_210000.weights", 0)
+        # self.meta = load_meta("./darknet/cfg/voc.data")
+
+        self.frames = []
+
+        self.frame_num = -1
+        self.start_frame = -1
+
+    def get_frames(self, frame):
+        out_frames = []
+
+        # frame = cv2.resize(frame, (224, 224))
+
+        self.frames.append(frame)
+        self.frame_num += 1
+
+
+        if len(self.frames) >= 5:
+            # calculate the frame differences
+            c_frame = self.frames[-1]
+            c_frame = cv2.cvtColor(c_frame, cv2.COLOR_BGR2GRAY)
+            b_frame = self.frames[-2]
+            b_frame = cv2.cvtColor(b_frame, cv2.COLOR_BGR2GRAY)
+            a_frame = self.frames[-3]
+            a_frame = cv2.cvtColor(a_frame, cv2.COLOR_BGR2GRAY)
+
+            cb_frame_diff = cv2.absdiff(c_frame, b_frame)
+            ba_frame_diff = cv2.absdiff(b_frame, a_frame)
+
+            cba_frame_diff = cv2.absdiff(cb_frame_diff, ba_frame_diff)
+            _, cba_frame_diff = cv2.threshold(cba_frame_diff, 30, 255, cv2.THRESH_BINARY)
+
+            cb_diff_mask = np.array(cb_frame_diff > 10, dtype=np.int32)
+            ba_diff_mask = np.array(ba_frame_diff > 10, dtype=np.int32)
+            cba_diff_mask = np.array(cba_frame_diff > 10, dtype=np.int32)
+
+            try:
+                diff_thresh = float(
+                    1.0 * np.sum(cba_diff_mask) / max(np.sum(cb_diff_mask), np.sum(ba_diff_mask)))
+
+            except:
+                diff_thresh = 0
+            # print('(threshold : {})'.format(diff_thresh))
+
+            if diff_thresh >= self.frame_diff_thresh and not self.move_detect:
+                self.move_detect = True
+                self.start_frame = self.frame_num - 2
+            # elif diff_thresh < 0.3 :
+            #     self.move_detect = False
+            #     frames = []
+
+            if self.move_detect:
+                if diff_thresh < 0.001: #.1:  # when the movement stops
+                    self.frames = self.frames[self.start_frame:]
+
+                    out_frames = copy.deepcopy(self.frames)
+                    self.frames = []
+
+                    # print(self.move_detect, diff_thresh, len(out_frames), len(self.frames))
+
+                    # initialize all members
+                    self.move_detect = False
+                    self.frame_num = -1
+                    self.start_frame = -1
+
+                    if len(out_frames) > 10:
+                        return out_frames
+                    else:
+                        return self.frames      # same as 'return []'
+
+                return out_frames  # same as 'return []'
+
+            return out_frames       # same as 'return []'
+
+        return out_frames       # same as 'return []'
+
 
 def sampling_frames(input_frames, sampling_num):
     total_num = len(input_frames)
@@ -77,6 +163,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    camera = Camera()
+
     action_model = TFModel()
 
     # cap = cv2.VideoCapture('/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/sample/200205/2020-02-05-17-49-01_00_415.avi')
@@ -112,8 +200,7 @@ if __name__ == '__main__':
     yolo = load_net("./darknet/cfg/yolov3.cfg", "./darknet/cfg/yolov3.weights", 0)
     meta = load_meta("./darknet/cfg/coco.data")
 
-    while cap.isOpened():
-
+    while True:
         # prev_time = time.time()
         action_time = time.time()
 
@@ -121,126 +208,52 @@ if __name__ == '__main__':
         if not ret:
             break
 
-        display_frame = copy.deepcopy(frame)
-        display_frame = cv2.resize(display_frame, (224, 224))
+        # display_frame = copy.deepcopy(frame)
+        # display_frame = cv2.resize(display_frame, (224, 224))
 
         # cv2.imshow('frame', display_frame)
         frame = cv2.resize(frame, (224, 224))
+        cv2.imshow('frame', frame)
+        cv2.waitKey(10)
 
+        '''
         frames.append(frame)
         # print(frame_num, len(frames))
+        '''
 
-        # detect
-        r = np_detect(yolo, meta, frame)
+        frames = camera.get_frames(frame)
 
-        if len(r) >= 1:
-            # cv2.circle(display_frame, (50, 50), 20, (255, 0, 0), -1)
+        if len(frames) == 0:  # no action yet
+            continue
 
-            if len(frames) >= 5:
-                c_frame = frames[-1]
-                c_frame = cv2.cvtColor(c_frame, cv2.COLOR_BGR2GRAY)
-                b_frame = frames[-2]
-                b_frame = cv2.cvtColor(b_frame, cv2.COLOR_BGR2GRAY)
-                a_frame = frames[-3]
-                a_frame = cv2.cvtColor(a_frame, cv2.COLOR_BGR2GRAY)
+        # action detected !
+        sampled_frames = sampling_frames(frames[start_frame:], args.action_video_length)
+        print('number of sampled frames : {}'.format(len(sampled_frames)))
 
-                cb_frame_diff = cv2.absdiff(c_frame, b_frame)
-                ba_frame_diff = cv2.absdiff(b_frame, a_frame)
+        # crop all images
+        cropped_frames = np.array(CropFrames(yolo, meta, sampled_frames))
 
-                cba_frame_diff = cv2.absdiff(cb_frame_diff, ba_frame_diff)
-                _, cba_frame_diff = cv2.threshold(cba_frame_diff, 30, 255, cv2.THRESH_BINARY)
+        # zero padding in time-axis
+        maxlen = 64
+        preprocessed = np.array(cropped_frames.tolist() + [np.zeros_like(cropped_frames[0])] * (maxlen - len(cropped_frames)))
 
-                cb_diff_mask = np.array(cb_frame_diff > 10, dtype=np.int32)
-                ba_diff_mask = np.array(ba_frame_diff > 10, dtype=np.int32)
-                cba_diff_mask = np.array(cba_frame_diff > 10, dtype=np.int32)
+        # result, confidence, top_3 = pred_action(sampled_frames)#pred_action(frames[-args.action_video_length:], frame_num)
+        # result, confidence, top_3 = pred_action(cropped_frames)
+        result, confidence, top_3 = pred_action(preprocessed)
+        print("{}, {}, {}\n".format(result, confidence, top_3))
+        # cv2.waitKey(0)
 
-                try:
-                     diff_thresh = float(1.0*np.sum(cba_diff_mask)/max(np.sum(cb_diff_mask), np.sum(ba_diff_mask)))
+        event_end_frame = frame_num
 
-                except:
-                    diff_thresh = 0
-                # print('(threshold : {})'.format(diff_thresh))
+        action_time = time.time()  # reset action_time
 
-                if diff_thresh >= args.frame_diff_thresh and not motion_detect:
-                    start_frame = frame_num - 2
-                    motion_detect = True
-                    print("start frame : {}\n".format(start_frame))
-                # elif diff_thresh < 0.3 :
-                #     motion_detect = False
-                #     # sampled_frames = []
+        action_list.append(result)
 
-                if motion_detect:
-                    cv2.circle(display_frame, (50, 50), 20, (0, 0, 255), -1)    # 12
-                    # print(start_frame)
+        motion_detect = False
+        sampled_frames = []
 
-                    action_time = time.time()   # reset action_time
-
-                    if diff_thresh < args.frame_diff_thresh:#frame_num >= start_frame + args.action_video_length:
-
-                        # print(diff_thresh, start_frame, frame_num, len(frames), len(frames[start_frame:]))  #########
-
-                        # small_diff += 1
-                        # if small_diff >= 5:
-                        #     motion_detect = False
-
-                        if len(frames[start_frame:]) >= args.frame_thresh:
-                            # print('SHOW !')
-                            # for f in frames[start_frame:]:
-                            #     # cv2.imshow('frame', frames[-(args.action_video_length-i)])
-                            #     cv2.imshow('frame', f)
-                            #     cv2.waitKey(500)
-                            print('total frames : {}'.format(len(frames[start_frame:])))
-
-                            sampled_frames = sampling_frames(frames[start_frame:], args.action_video_length)
-                            for num, f in enumerate(sampled_frames):
-                                if not os.path.exists('/home/pjh/Videos/test-arbitrary_parts/{}'.format(len(action_list))):
-                                    os.makedirs('/home/pjh/Videos/test-arbitrary_parts/{}'.format(len(action_list)))
-                                cv2.imwrite('/home/pjh/Videos/test-arbitrary_parts/{}/{}.jpg'.format(len(action_list), num), f)
-                            #     # cv2.imshow('frame', frames[-(args.action_video_length-i)])
-                            #     cv2.imshow('frame', f)
-                            #     cv2.waitKey(300)
-                            print('number of sampled frames : {}'.format(len(sampled_frames)))
-
-                            # crop all images
-                            cropped_frames = CropFrames(yolo, meta, sampled_frames)
-
-                            # result, confidence, top_3 = pred_action(sampled_frames)#pred_action(frames[-args.action_video_length:], frame_num)
-                            result, confidence, top_3 = pred_action(cropped_frames)
-                            print("{}, {}, {}\n".format(result, confidence, top_3))
-                            # cv2.waitKey(0)
-
-                            cv2.putText(display_frame, str(result), (100, 50), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255, 2))
-                            event_end_frame = frame_num
-
-                            action_time = time.time()  # reset action_time
-
-                            if True:#result != None:
-                                # action_end_frame = frame_num
-                                action_list.append(result)
-
-                                if len(action_list) >= args.action_thresh:
-                                    motion_detect = False
-                                    break
-                            else:
-                                print("Do the previous action again ..\n")
-
-                            motion_detect = False
-                            sampled_frames = []
-
-                    waiting_time = time.time() - action_time
-                    if waiting_time > args.waiting_time:
-                        print("waiting time : {}".format(waiting_time))
-                        print("Finish detecting actions .\n")
-                        break
-
-                    # if (frame_num > start_frame + args.action_video_length) and (result == None):
-                    #     motion_detect = False
-                    #     action_list = []
-
-        cv2.imshow('frame', display_frame)
-        cv2.waitKey(50)
         # writer.write(display_frame)
-        cv2.imwrite('/home/pjh/Videos/test-arbitrary_frames/{}.jpg'.format(frame_num), display_frame)
+        # cv2.imwrite('/home/pjh/Videos/test-arbitrary_frames/{}.jpg'.format(frame_num), display_frame)
 
         # print(time.time() - prev_time)
         frame_num = frame_num + 1
