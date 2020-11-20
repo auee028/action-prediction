@@ -57,7 +57,7 @@ def CropFrames(yolo, meta, frames):
         if h > w * ratio:
             y1 = int(y + w * ratio / 2)
 
-        # image = cv2.rectangle(image, (x0, y0), (x1, y1), (255, 255, 0), 3)
+        image = cv2.rectangle(image, (x0, y0), (x1, y1), (255, 255, 0), 3)
         # cv2.imshow("image", image)
         # cv2.waitKey(50)
 
