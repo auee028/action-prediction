@@ -17,8 +17,11 @@ def CropFrames(yolo, meta, frames):
     # x_list = []
     # y_list = []
 
+    _, width, _ = frames[0].shape
+    center_org = int(width / 2)
+
     person_list = []
-    center_x_list = []
+    dist_list = []
     for cur_f, image in enumerate(frames):
 
         r = np_detect(yolo, meta, image)  # (meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h))
@@ -103,16 +106,18 @@ def CropFrames(yolo, meta, frames):
 
         try:
             person_list.append(r[0])
-            center_x_list.append(r[0][0])
+            dist_list.append(abs(center_org - r[0][-1][0]))
         except:
             continue
 
-    if len(center_x_list) == 0:
+    if len(dist_list) == 0:
         return []
+
+    print(dist_list)
 
     # It can happen that the next one is only detected while the real biggest bbox is not detected.
     #  -> repeat to choose the most in the middle bbox again.
-    person_front = person_list[np.argmin(center_x_list)]
+    person_front = person_list[np.argmin(dist_list)]
 
     x, y, w, h = person_front[-1]
 
@@ -262,5 +267,6 @@ def CropFrames(yolo, meta, frames):
 
     return np.array(new_frames)
     """
+
 
 
