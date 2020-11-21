@@ -15,7 +15,8 @@ import argparse
 # from crop_frames import CropFrames
 # from crop_frames_frontPerson_v1 import CropFrames
 # from crop_frames_frontPerson_v2 import CropFrames
-from crop_frames_frontPerson_v3 import CropFrames
+# from crop_frames_frontPerson_v3 import CropFrames
+from crop_frames_frontPerson_v4 import CropFrames
 from TFModel_mtsi3d import TFModel
 
 import requests
@@ -111,7 +112,7 @@ if __name__ == '__main__':
     # cap = cv2.VideoCapture('/media/pjh/HDD2/Dataset/ces-demo-4th/trimmed_video/0113/jeongwoo/12/2020-01-10-18-15-12_00_86.avi')
     # cap = cv2.VideoCapture('/home/pjh/Videos/test_vid.avi')
     # cap = cv2.VideoCapture('/home/pjh/PycharmProjects/action-prediction/sample/200206/demo_recogtest-JH/2020-02-06/14_coming in-sitting-reading-nodding off-standing-sitting/2020-02-06-15-11-05_00_642.avi')
-    cap = cv2.VideoCapture('/home/pjh/Videos/Office-39890.mp4')    # Alley-39837.mp4 | Camera-26531.mp4 | Office-39890.mp4
+    cap = cv2.VideoCapture('/home/pjh/Videos/Camera-26531.mp4')    # Alley-39837.mp4 | Camera-26531.mp4 | Office-39890.mp4
     # cap = cv2.VideoCapture('/home/pjh/Videos/test_vid.avi')
 
     cap.set(3, args.width)
@@ -137,7 +138,7 @@ if __name__ == '__main__':
     meta = load_meta("./darknet/cfg/coco.data")
 
     print("Do an action!")
-    time.sleep(1)
+    # time.sleep(1)
 
     while True:
         # prev_time = time.time()
@@ -173,7 +174,7 @@ if __name__ == '__main__':
 
             for i in cropped_frames:
                 cv2.imshow('cropped frame', i)
-                cv2.waitKey(50)
+                # cv2.waitKey(50)
 
             cv2.imwrite('tmp/img.jpg', cropped_frames[0])
 
@@ -212,7 +213,7 @@ if __name__ == '__main__':
             result = None
 
             print("Do an action!")
-            time.sleep(1)
+            # time.sleep(1)
 
         # waiting_time = time.time() - action_time
         # if waiting_time > args.waiting_time:
