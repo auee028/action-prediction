@@ -43,7 +43,11 @@ def CropFrames(yolo, meta, frames):
             y_list.append([y0, y1])
         """
 
-        biggest_person = r[0]
+        try:
+            biggest_person = r[0]
+
+        except:
+            continue
 
         x, y, w, h = biggest_person[-1]
 
