@@ -86,7 +86,7 @@ class I3DNet:
 class multiscaleI3DNet:
     def __init__(self, inps, n_class, batch_size,
                  pretrained_model_path, final_end_point, dropout_keep_prob,
-                 is_training, scope='v/SenseTime_I3D'):
+                 is_training, scope='v/MultiScale_I3D'):
 
         self.final_end_point = final_end_point
         self.n_class = n_class

@@ -1,6 +1,8 @@
-import tensorflow as tf
+import os
 import i3d
 import re
+import tensorflow as tf
+
 from stn import spatial_transformer_network as transformer
 
 from resnet3d import ResNet
@@ -45,7 +47,7 @@ def preprocess(inps, batch_size, is_training):
 class multiscaleI3DNet:
     def __init__(self, inps, n_class, batch_size,
                  pretrained_model_path, final_end_point, dropout_keep_prob,
-                 is_training, scope='v/SenseTime_I3D'):
+                 is_training, scope='v/MultiScale_I3D'):
 
         self.final_end_point = final_end_point
         self.n_class = n_class
@@ -59,18 +61,19 @@ class multiscaleI3DNet:
             final_endpoint=final_end_point, scope=scope,
             dropout_keep_prob=dropout_keep_prob, is_training=is_training)
 
-        var_dict = { re.sub(r':\d*','',v.name):v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=scope) }
+        var_dict = { re.sub(r':\d*','',v.name.replace('v/SenseTime_I3D', 'v/MultiScale_I3D')):v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.scope) }
         self.assign_ops = []
         if pretrained_model_path:
             for var_name, var_shape in tf.contrib.framework.list_variables(pretrained_model_path):
-                if var_name.startswith('v/SenseTime_I3D/Logits'):
+                if not var_name.startswith('v/MultiScale_I3D'):
                     continue
                 # load variable
+                print(var_name, var_dict.keys())
                 var = tf.contrib.framework.load_variable(pretrained_model_path, var_name)
-                assign_op = var_dict[var_name.replace('v/SenseTime_I3D', scope)].assign(var)
+                assign_op = var_dict[var_name].assign(var)
                 self.assign_ops.append(assign_op)
 
-            print(var_dict.keys())
+            # print(var_dict.keys())
             '''
             # print(var_dict.keys())
             i = 0
@@ -104,24 +107,6 @@ class multiscaleI3DNet:
                                       scope=self.scope,
                                       reuse=True)
 
-        # out, end_points = mtsi3d.MultiscaleI3D(preprocess(inps, self.batch_size, self.is_training),
-        #                               num_classes=self.n_class,
-        #                               batch_size=self.batch_size,
-        #                               is_training=self.is_training,
-        #                               final_endpoint=self.final_end_point,
-        #                               dropout_keep_prob=self.dropout_keep_prob,
-        #                               scope=self.scope,
-        #                               reuse=True)
-        #
-        # feat1 = end_points['MaxPool3d_3a_1x3x3']
-        # feat2 = end_points['MaxPool3d_4a_3x3x3']
-        # feat3 = end_points['MaxPool3d_5a_2x2x2']
-        #
-        # out = mtsi3d.FeatureEmbedding([feat1, feat2, feat3, out],
-        #                               num_classes=self.n_class,
-        #                               batch_size=self.batch_size,
-        #                               final_endpoint='Logits')
-
         return out
 
 
@@ -144,13 +129,14 @@ class I3DNet:
 
         var_dict = { re.sub(r':\d*','',v.name):v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=scope) }
         self.assign_ops = []
-        for var_name, var_shape in tf.contrib.framework.list_variables(pretrained_model_path):
-            if var_name.startswith('v/SenseTime_I3D/Logits'):
-                continue
-            # load variable
-            var = tf.contrib.framework.load_variable(pretrained_model_path, var_name)
-            assign_op = var_dict[var_name].assign(var)
-            self.assign_ops.append(assign_op)
+        if pretrained_model_path:
+            for var_name, var_shape in tf.contrib.framework.list_variables(pretrained_model_path):
+                if var_name.startswith('v/SenseTime_I3D/Logits'):
+                    continue
+                # load variable
+                var = tf.contrib.framework.load_variable(pretrained_model_path, var_name)
+                assign_op = var_dict[var_name].assign(var)
+                self.assign_ops.append(assign_op)
 
     def __call__(self, inps):
         out, _ = i3d.I3D(preprocess(inps, self.batch_size,self.is_training), num_classes=self.n_class,
