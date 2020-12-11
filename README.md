@@ -1,75 +1,60 @@
 # action-prediction
 
-## Dependencies
+## Prerequisites
 * python 2.7
 * CUDA 8.0, cuDNN 6.0
 
-## Packages
-* tensorflow-gpu==1.4.0
-* numpy==1.16.2
-* opencv-python==3.4.4.19
-* requests==2.24.0
-* natsort==6.2.1
-* pillow==6.2.2
-* stn==1.0.1
-* Flask==1.0.2
-
-## Dataset
-* STAIR dataset
-* 16 action classes among whole STAIR dataset
+## Packages to install
 ```
-bowing
-entering_room
-going_out_of_room
-listening_to_music_with_headphones
-nodding
-reading_book
-reading_newspaper
-setting_hair
-shaking_hands
-sitting_down
-standing_up
-studying
-using_computer
-using_smartphone
-walking
-writing
-
-```
-* training and validation video files lists under 'annotation/' folder<br>
-  (trainlist-STAIR.txt, vallist-STAIR.txt)
-```
-Train dataset : 12806 videos
-Val dataset : 1430 videos
-(ratio of train/val : 8.96)
+pip install -r requirements.txt
 ```
 
-* Breakfast dataset
-* 10 action classes in the kitchen
+## ABR-actionDataset
+* saved in NAS (/homes/admin/Lab Dataset/action_data)
 ```
-coffee (n=200)
-orange juice (n=187)
-chocolate milk (n=224)
-tea (n=223)
-bowl of cereals (n=214)
-fried eggs (n=198)
-pancakes (n=173)
-fruit salad (n=185)
-sandwich (n=197)
-scrambled eggs (n=188).
+action_data/
+        |____ ABR_action-cropped          # videos cropped by part_detector
+        |____ ceslea_videos               # original videos collected in 2018?
+        |____ ceslea_videos_2020          # original videos collected in 2020.2(4th year of Ceslea)
+        |____ ceslea_videos_2020_cropped  # cropped frames of ceslea_videos_2020/ with crop_frames.py (used for training)
 ```
+
+* 15 action classes
+```
+
+sitting
+standing
+drinking
+brushing
+playing uculele
+speaking
+waving hands
+working
+coming
+leaving
+talking on the phone
+stretching
+nodding off
+reading 
+blowing nose
+
+```
+* You should locate training and validation video list files under 'annotation/' folder<br>
+  (trainlist-ABR.txt, vallist-ABR.txt)
+
 
 ## Requirements
-Download darknet and move the folder of 'darknet/' below the root directory of 'action_anticipation/'. (reference : [here](https://pgmrlsh.tistory.com/4))
 
-# step 1. Download darknet
+### Darknet
+* step 1. Download darknet if you don't have
+Download darknet and move the folder of 'darknet/' below the root directory of this project. (reference : [here](https://pgmrlsh.tistory.com/4))
 ```
 cd action_anticipation/
 git clone https://github.com/pjreddie/darknet
 
 ```
 
-# step 2. Edit Makefile
+* step 2. Edit Makefile
 ```
 vi Makefile
 
@@ -77,7 +62,7 @@ vi Makefile
 If you use CUDA, set GPU=1.
 If you use OpenCV, set OPENCV=1.
 
-# step 3. Make
+* step 3. Make
 ```
 cd darknet
 make
@@ -85,11 +70,34 @@ make
 ```
 
 ## Training/Validation
-train_script.py
+1. training mtsi3d with pretrained i3d weights
+```
+python train_mtsi3d.py --mode_pretrained=i3d --pretrained_model_path=pretrained/i3d-tensorflow/kinetics-i3d/data/kinetics_i3d/model --scope=v/SenseTime_I3D
+```
 
-## Test(including real-time)
-action_viewer_webcam.py
-action_viewer_webcam-cropped.py
+2. training mtsi3d with pretrained(or paused) mtsi3d weights
+```
+python train_mtsi3d.py --mode_pretrained=mtsi3d --pretrained_model_path=pretrained/mtsi3d_ABR-action_finetune --scope=v/SenseTime_I3D
+```
+or
+```
+python train_mtsi3d.py --mode_pretrained=mtsi3d --pretrained_model_path=_your model path_ --scope=v/MultiScale_I3D
+```
+* If you set cross-validation as True, only train_text_path is used for training.
+* If you set cross-validation as False, both train_text_path and val_text_path are used for training.
 
-## Data augmentation(to crop frames)
-data_aug_2.py
+3. check for loss and accuracy saved at ./analysis/ (default)
+
+4. check for trained model at ./save_model (default)
+
+
+## Test(including real-time) ==> for more details, see HOWtoUSE.md
+```
+python action_app.py
+python action_main.py
+```
+or
+```
+python action_app.py
+python action_pred.py
+```
