@@ -3,7 +3,7 @@
 
 
 <head>
-    <title>Action Demo</title>
+    <title>Intention Demo</title>
     <META HTTP-EQUIV="refresh" CONTENT="15">
 
     <style type="text/css">
@@ -20,21 +20,21 @@
         margin: 20px 10px;
         }
         table.type11 th {
-            width: 640px;
+            width: 320px;
             padding: 10px;
             font-weight: bold;
             vertical-align: top;
             color: #fff;
             font-family: "Courier New", Courier, monospace; font-size:30px;
-            background: #4869 ;
+            background: #ce4869 ;
         }
         table.type11 td {
-            width: 640px;
+            width: 320px;
             padding: 10px;
             vertical-align: top;
             border-bottom: 1px solid #ccc;
             font-family: "Courier New", Courier, monospace; font-size:25px;
-            background: #eef;
+            background: #eee;
         }
         h1 {
             font-size: 50px;
@@ -53,18 +53,29 @@
         }
         );
 
+        $(
+        function update_intent() {
+          $.getJSON('/state/get/intent', function (res) {
+              $("#intent_status").text(res.intent);
+              setTimeout(function () {
+                  update_intent();
+              }, 500);
+          })
+        }
+        );
 
-        var {pos,val, i} = {};
+        var {pos,val, i, isChange} = {};
         var data_points = [];
 
         $(
         function draw_chart(){
-           $.getJSON('/state/get/action_panel', function (res) {
+           $.getJSON('/state/get/intent_panel', function (res) {
                 pos = res.labels;
                 val = res.probs;
+                isChange = res.isChange;
 
                 for(i=0;i<pos.length;i++){
-                    data_points[i] = {y:val[i], label:(pos[i])};
+                    data_points[i] = {y:val[i], label:pos[i]};
                 }
 
                 chart = new CanvasJS.Chart("chartContainer", {
@@ -79,7 +90,7 @@
                 },
                 data: [{
                     type: "column",
-                    name: "action_probs",
+                    name: "intent_probs",
                     axisYType: "secondary",
                     dataPoints: data_points,
                 }]
@@ -111,11 +122,13 @@
             <thead>
             <tr>
                 <th scope="cols">Action</th>
+                <th scope="cols">Intent</th>
             </tr>
             </thead>
             <tbody>
             <tr>
                 <td id="action_status"></th>
+                <td id="intent_status"></th>
             </tr>
             </tbody>
         </table>
@@ -125,7 +138,7 @@
 
      <div class="right_region">
          <b>
-             <h1 align="center">Top-3 Actions</h1>
+             <h1 align="center">Top-3 Intentions</h1>
              <div id="chartContainer" style="height: 480px; width: 100%; margin: 0 auto" align="right"></div>
              <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
          </b>

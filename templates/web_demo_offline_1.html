@@ -1,0 +1,107 @@
+<head>
+  <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"> <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- bootstrap -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+
+  <!-- Google fonts -->
+  <link href="http://fonts.googleapis.com/css?family=Roboto:400,300" rel="stylesheet" type="text/css">
+
+  <!-- Google Analytics -->
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script async="" src="//www.google-analytics.com/analytics.js"></script><script>
+  function page_loaded() {
+  }
+  </script>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+  <style type="text/css">
+    .normal {
+      font-size: 20px;
+    }
+  .center{
+    margin: auto;
+    text-align:left;
+    position: relative;
+    width:800px;
+  }
+  .center_vid{
+    margin: 0 auto;
+    display: block;
+  }
+  table.type11 {
+  border-collapse: separate;
+  border-spacing: 1px;
+  text-align: center;
+  line-height: 1.5;
+  margin: auto;
+  }
+  table.type11 th {
+      width: 800px;
+      padding: 10px;
+      font-weight: bold;
+      vertical-align: top;
+      color: #fff;
+      font-family: "Courier New", Courier, monospace; font-size:30px;
+      background: #4869 ;
+      text-align: center;
+  }
+  table.type11 td {
+      width: 800px;
+      padding: 10px;
+      vertical-align: top;
+      border-bottom: 1px solid #ccc;
+      font-family: "Courier New", Courier, monospace; font-size:25px;
+      background: #eef;
+      text-align: center;
+  }
+  </style>
+</head>
+
+
+<title> Action Demo </title>
+<h2 align="center" style="font-size:40px;"> Action Demo </h2>
+<div class="container sec">
+    <div class="center" style="">
+      <img src="{{ url_for('live_cam') }}" id="realCAM" class="center_vid" width="800" height="600">
+      <div id="descriptions1" class="row" style="font-size:150%;margin-top:15px" align="center"> </div>
+      <table class="type11">
+         <thead>
+         <tr>
+             <th scope="cols" align="center">ACTION</th>
+         </tr>
+         </thead>
+         <tbody>
+         <tr>
+             <td id="action_status"></th>
+         </tr>
+         </tbody>
+     </table>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+      var realcam = document.getElementById("realCAM");
+      var d1 = document.getElementById("action_status");
+      displayDescriptions();
+      function displayDescriptions(){
+        d1.innerHTML = update_action();
+      }
+      function update_action(){
+        $.getJSON('/state/get/action', function (res) {
+            $("#action_status").text(res.action);
+            setTimeout(function(){
+              update_action();
+            }, 500);
+        });
+      }
+    })
+
+</script>

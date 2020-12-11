@@ -1,0 +1,111 @@
+<!--suppress ALL -->
+<head>
+<style>
+    div {
+        font-size: 35px;
+        padding: 10px;
+        border: 5px solid gray;
+    }
+
+    table {
+        width: 100%;
+        border: 1px solid #444444;
+        font-size: 20px;
+    }
+
+    th, td {
+        font-size: 25px;
+        border: 1px solid #444444;
+        text-align: center;
+    }
+</style>
+</head>
+
+<title>Video Caption Generator Demo Page</title>
+<h1>Video Caption Generator Demo Page</h1>
+<div>
+    <p>This page demo page for Context-Awareness Video Captioning.</p>
+    <p>Steps are as below...</p>
+    <p>1. Select a video to test our system. </p>
+    <p>2. Submit the selected video to our cloud server. </p>
+    <p>3. See and check the automatically generated captions of each sub-scene. </p>
+</div>
+
+<form action="{{ url_for('upload_file') }}" method=post enctype=multipart/form-data>
+    <p><input type=file name=file></p>
+    <p><input type=submit value=submit>  {{ status }}</p>
+</form>
+<script>
+    var data_str = "{{ data }}";
+    var data_obj = JSON.parse(data_str.replace(/&#34;/g,'"'));
+
+    var sents = data_obj.sents;
+    var video_list = data_obj.video_list;
+    var error_msg = data_obj.error_msg;
+
+    if (error_msg){
+        alert(error_msg);
+
+        // switch to prev page
+        var prev=document.referrer;
+        window.location.href = prev;
+    }
+
+    var n = sents.length;
+
+    if (n>0)
+    {
+        var table = document.createElement("table");
+        document.body.appendChild(table);
+
+        // add head cell
+        var head = document.createElement("tr");
+        var h1 = document.createElement("th");
+        h1.innerText = "Index";
+
+        var h2 = document.createElement("th");
+        h2.innerText = "Video Clips";
+
+        var h3 = document.createElement("th");
+        h3.innerText = "Generated Captions";
+
+        head.appendChild(h1);
+        head.appendChild(h2);
+        head.appendChild(h3);
+
+        table.appendChild(head);
+
+        for(i=0 ; i<=n-1 ; i++)
+
+        {
+
+           var row = document.createElement("tr");
+
+           var td1 = document.createElement("td"); // event index
+           td1.innerText = "Event" + "-" + (i+1);
+
+           var videoPlayer = document.createElement("VIDEO");
+           videoPlayer.id = "video_player";
+           videoPlayer.width="320"; videoPlayer.height="240";
+           videoPlayer.controls="controls";
+
+           var source = document.createElement("SOURCE");
+           source.src = video_list[i];
+           source.type = "video/mp4";
+           videoPlayer.appendChild(source);
+
+           var td2 = document.createElement("TD"); // video
+           td2.appendChild(videoPlayer);
+
+           var td3 = document.createElement("TD"); // caption
+           td3.innerText = sents[i];
+
+           row.appendChild(td1);
+           row.appendChild(td2);
+           row.appendChild(td3);
+
+           table.appendChild(row);
+
+        }
+    }
+</script>

@@ -1,0 +1,81 @@
+<html>
+
+
+
+<head>
+    <title>Intention Demo</title>
+    <META HTTP-EQUIV="refresh" CONTENT="15">
+
+    <style type="text/css">
+    table.type11 {
+      border-collapse: separate;
+      border-spacing: 1px;
+      text-align: center;
+      line-height: 1.5;
+      margin: 20px 10px;
+    }
+    table.type11 th {
+      width: 600px;
+      padding: 10px;
+      font-weight: bold;
+      vertical-align: top;
+      color: #fff;
+      font-family: "Courier New", Courier, monospace; font-size:30px;
+      background: #4869;
+    }
+    table.type11 td {
+      width: 600px;
+      padding: 10px;
+      vertical-align: top;
+      border-bottom: 1px solid #ccc;
+      font-family: "Courier New", Courier, monospace; font-size:25px;
+      background: #eee;
+    }
+    h1 {
+      font-size: 50px;
+    }
+    </style>
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+        $(
+        function update_action(){
+            $.getJSON('/state/get/action', function (res) {
+                $("#action_status").text(res.action);
+                setTimeout(function () {
+                  update_action();
+                }, 500);
+            });
+        }
+        );
+
+    </script>
+
+
+</head>
+
+<body>
+    <b>
+       <h1 align="center">Live Cam</h1>
+    </b>
+    <div align="center">
+        <img src="{{ url_for('live_cam') }}" height="480" width="640">
+        <table class="type11">
+          <thead>
+          <tr>
+              <th scope="cols">Action</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+              <td id="action_status"></th>
+          </tr>
+          </tbody>
+        </table>
+    </div>
+
+
+</body>
+
+</html>

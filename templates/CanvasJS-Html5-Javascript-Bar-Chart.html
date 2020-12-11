@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+
+    window.onload = function () {
+	var pos = ['a','b','c'];
+	var val = [1,2,3];
+	var data_points = [];
+	for(var i=0;i<pos.length;i++){
+		data_points[i] = {y:val[i], label:pos[i]};
+	}
+
+	var chart = new CanvasJS.Chart("chartContainer", {
+	animationEnabled: true,
+
+	title:{
+		text:"Fortune 500 Companies by Country"
+	},
+	axisX:{
+		interval: 1
+	},
+	axisY2:{
+		interlacedColor: "rgba(1,77,101,.2)",
+		gridColor: "rgba(1,77,101,.1)",
+		title: "Number of Companies"
+	},
+	data: [{
+		type: "bar",
+		name: "companies",
+		axisYType: "secondary",
+		color: "#014D65",
+		dataPoints: data_points
+	}]
+});
+chart.render();
+
+}
+</script>
+
+</head>
+
+<body>
+<div id="chartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<title>Vertical Center</title>
+
+<style type="text/css" media="all">
+html,body{
+	height:100%;
+	margin:0;
+	padding:0;
+}
+body{
+	text-align:center;
+	min-width:600px;
+	min-height:400px;
+}
+
+div#vertical {
+	float: left;
+	height:50%;
+	margin-top:-200px;
+	width:100%;
+}
+
+table#content {
+	margin: 0 auto;
+	width: 600px;
+    background: #eee;
+	height: 400px;
+	clear: both;
+	overflow: auto;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="vertical"></div>
+
+<table id="content">
+        <tr>
+        <th scope="cols">Action</th>
+        <th scope="cols">Intent</th>
+    </tr>
+    <tbody>
+    <tr>
+        <td id="action_status">a</th>
+        <td id="intent_status">b</th>
+    </tr>
+
+</table>
+
+</body>
+</html>

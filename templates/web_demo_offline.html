@@ -1,0 +1,291 @@
+<head>
+  <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"> <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- bootstrap -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+
+  <!-- Google fonts -->
+  <link href="http://fonts.googleapis.com/css?family=Roboto:400,300" rel="stylesheet" type="text/css">
+
+  <!-- Google Analytics -->
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script async="" src="//www.google-analytics.com/analytics.js"></script><script>
+  function page_loaded() {
+  }
+  </script>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+  <style type="text/css">
+    .normal {
+      font-size: 20px;
+    }
+  .center{
+    margin: auto;
+    text-align:left;
+    position: relative;
+    width:800px;
+  }
+  .center_vid{
+    margin: 0 auto;
+    display: block;
+  }
+  button{
+    margin:auto;
+    margin-top:10px;
+    margin-bottom:10px;
+    display:block;
+  }
+  canvas{
+    margin:auto;
+    position:relative;
+    display:block;
+  }
+  </style>
+</head>
+
+
+<title>Context-Awareness Video Captioning Demo </title>
+<h2 align="center" style="font-size:40px;">Context-Awareness Video Captioning Demo </h2>
+<div class="container sec">
+    <form name="playrate" class="center" style="font-size:120%"> <b>You can change the playback rate here anytime:</b>
+        <input type="radio" name="group" value="0.5">0.5x
+        <input type="radio" name="group" value="1">1x
+        <input type="radio" name="group" value="2">2x
+        <input type="radio" name="group" value="4">4x
+    </form>
+    <div class="row" style="">
+      <video id="exp-video" class="center_vid" controls muted preload="auto" width="800" height="450" data-setup="{}" loop="true">
+        <source id="source1" src=https://ai.stanford.edu/~ranjaykrishna/actiongenome/v_-r_bvqjYjYg.mp4 type=video/mp4>
+      </video>
+      <canvas class="center" id="canvas1" width="800" height="200"> Your browser does not support the HTML5 canvas tag.</canvas>
+      <div id="descriptions1" class="center" style="font-size:130%;margin-bottom:15px"> </div>
+      <div class="center" style="text-align:center">
+        <button id="last" type="button" class="btn btn-primary pull-left" style="margin-bottom:10px">Previous Video</button>
+        <button id="next" type="button" class="btn btn-primary pull-right" style="margin-bottom:10px">Next Video</button>
+      </div>
+    </div>
+</div>
+
+<script>
+    var selected_set = [
+        'v_GBFRHM7i-NQ','v_otWTm1_aAqI',
+        'v_l7gWFOa7FnI','v_IlKOWIBAEFE',
+        'v_7NG6UrY2Foo','v_FsS_NCZEfaI',
+        'v_K6Tm5xHkJ5c','v_a1WhnMcTbrY',
+        'v_jzCnWUUUviE','v_akwJwcvfjLA',
+        'v_KMz8f9vDK38','v_laKctaVegPg',
+    ];
+    var dataUrl = "web_demo-last.json";
+    var data = [];
+    var times = [];
+
+    function ajaxCall(){
+      return $.ajax({
+        url: dataUrl,
+        dataType: "json",
+        async:false,
+      });
+    }
+    ajaxCall().done(function(result){
+      data = result;
+    }).fail(function(){
+      alert("An error occured calling ajax!");
+    });
+    console.log(Object.keys(data).length);
+
+    // Get elements
+    // Initial constant setup
+    var total_num = selected_set.length;
+    var v_start = 50;
+    var space_between = 10;
+    var stroke_size = 10;
+    var video_num = 0;
+    // Total width of the play, volume, time and maximize button of video control bar
+    // Constant, independent of window size
+    var left_width = 108;
+    var right_width = 188;
+
+    var cur_vid = ""
+    var cur_timestamps = [];
+    var cur_descriptions = [];
+    var badlist = [];
+
+
+    function prepareData(index){
+        cur_vid = selected_set[video_num];
+        cur_timestamps = data[cur_vid].timestamps;
+        cur_descriptions = data[cur_vid].sentences;
+    }
+
+    var colors = ["#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059","#FFDBE5", "#7A4900", "#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87","#5A0007", "#809693", "#FEFFE6", "#1B4400", "#4FC601", "#3B5DFF", "#4A3B53", "#FF2F80","#61615A", "#BA0900", "#6B7900", "#00C2A0", "#FFAA92", "#FF90C9", "#B903AA", "#D16100","#DDEFFF", "#000035", "#7B4F4B", "#A1C299", "#300018", "#0AA6D8", "#013349", "#00846F","#372101", "#FFB500", "#C2FFED", "#A079BF", "#CC0744", "#C0B9B2", "#C2FF99", "#001E09","#00489C", "#6F0062", "#0CBD66", "#EEC3FF", "#456D75", "#B77B68", "#7A87A1", "#788D66","#885578", "#FAD09F", "#FF8A9A", "#D157A0", "#BEC459", "#456648", "#0086ED", "#886F4C","#34362D", "#B4A8BD", "#00A6AA", "#452C2C", "#636375", "#A3C8C9", "#FF913F", "#938A81","#575329", "#00FECF", "#B05B6F", "#8CD0FF", "#3B9700", "#04F757", "#C8A1A1", "#1E6E00","#7900D7", "#A77500", "#6367A9", "#A05837", "#6B002C", "#772600", "#D790FF", "#9B9700","#549E79", "#FFF69F", "#201625", "#72418F", "#BC23FF", "#99ADC0", "#3A2465", "#922329","#5B4534", "#FDE8DC", "#404E55", "#0089A3", "#CB7E98", "#A4E804", "#324E72", "#6A3A4C"];
+
+    // Define time update listener for all video tags
+    $(document).ready(function(){
+      var c1 = document.getElementById('canvas1');
+      var start = 0;
+      var end = c1.width;
+      var v_start = 40;
+      var stroke_size = 10;
+      var left_width = 108;
+      var right_width = 216;
+      var bar_width = 476;
+      var total_width = bar_width + left_width + right_width;
+      var ctx1 = c1.getContext("2d");
+      var video = document.getElementById("exp-video");
+      var d1 = document.getElementById("descriptions1");
+      video.playbackRate = 2;
+      prepareData(video_num);
+      clearDisplay();
+      displayDescriptions(video_num);
+      source1.src = "https://ai.stanford.edu/~ranjaykrishna/actiongenome/" + cur_vid;
+      video.load();
+      video.playbackRate = 2;
+      video.play();
+      video.ontimeupdate = function(){
+        var drawspeed = c1.width * (bar_width/total_width) / video.duration;
+        start = c1.width * (left_width / total_width);
+        end = c1.width * (left_width + bar_width) / total_width;
+        var percent = Math.floor((100 / video.duration) * video.currentTime);
+        if ((video.currentTime > 0 && video.readyState > 2 && !video.paused)){
+          if (percent <= 100){
+            var y = 0;
+            ctx1.clearRect(0, 0, c1.width, c1.height);
+            ctx1.font = "18px sans serif";
+            ctx1.fillStyle = "#000000";
+            ctx1.fillText("Annotation " + ":", 0, v_start);
+            y = y + 2;
+            drawBar(cur_timestamps, v_start+y*space_between, c1, ctx1, video.duration);
+          }
+        }
+      }
+
+
+      // Define playbackRate listener
+      var playrates = document.forms["playrate"].elements["group"];
+      for (var i = 0; i < playrates.length; i++){
+        playrates[i].onclick = function(){
+          video.playbackRate = this.value;
+        }
+      }
+
+      // Previous Video button
+      var lb = document.getElementById("last");
+      lb.onclick = function(e){
+        for(var i=0;i<data.length;i++){
+          ctx1.clearRect(0, 0, c1.width, c1.height);
+        }
+        if (video_num > 0){
+          video_num = video_num - 1;
+          prepareData(video_num);
+          clearDisplay();
+          displayDescriptions(video_num);
+          var source1 = document.getElementById("source1");
+          video.pause();
+          source1.src = "https://ai.stanford.edu/~ranjaykrishna/actiongenome/" + cur_vid;
+          video.load();
+          video.playbackRate = 2;
+          lb.blur();
+          video.play();
+        }
+        else{
+          alert("This is the first video!");
+        }
+      }
+
+      // Next Video button
+      var nb = document.getElementById("next");
+      nb.onclick = function(e){
+        video_num = video_num + 1;
+        if(video_num <= total_num - 1){
+          space_taken = 0;
+          for(var i=0;i<data.length;i++){
+            ctx1.clearRect(0, 0, c1.width, c1.height);
+          }
+          var source1 = document.getElementById("source1");
+          video.pause();
+          prepareData(video_num);
+          console.log(cur_vid);
+          console.log(cur_timestamps);
+          clearDisplay();
+          displayDescriptions(video_num);
+          source1.src = "https://ai.stanford.edu/~ranjaykrishna/actiongenome/" + cur_vid;
+          video.load();
+          video.playbackRate = 2;
+          nb.blur();
+          video.play();
+        }
+        else{
+          video_num = video_num - 1;
+          alert("This is the last sample annotation!");
+        }
+      }
+      /*
+      console.log(simpleamt.isPreview());
+      if (!simpleamt.isPreview()) {
+        simpleamt.setupSubmit();
+        $("#submit-btn").click(function() {
+          if(video_num != LIST_OF_V.length-1){
+            alert("Please finish the task for all videos!");
+            return false;
+          }
+          else{
+            simpleamt.setOutput(web_data);
+          }
+        });
+      }
+      */
+
+      function displayDescriptions(video_num){
+        for(var i=0;i<cur_descriptions.length;i++){
+          d1.innerHTML += (i+1) + ". " + cur_descriptions[i] + "<br>";
+        }
+      }
+      function clearDisplay(){
+        d1.innerHTML = "Annotation: <br>";
+      }
+
+      function drawBar(timestamps, v_pos, canvas, context, duration){
+        c1.height = timestamps.length * 20 + 80;
+        var drawspeed = canvas.width * (bar_width/total_width) / duration;
+        var cumulative_space = 0;
+        context.lineWidth=3;
+        context.beginPath();
+        context.strokeStyle="#000000";
+        context.moveTo(start,v_pos);
+        context.lineTo(end,v_pos);
+        context.stroke();
+        context.closePath();
+        context.font = "18px sans serif";
+        cumulative_space = cumulative_space + 20;
+        for(var i=0;i<timestamps.length;i++){
+          if(typeof timestamps[i] !== "undefined"){
+            context.beginPath();
+            var cur_color = colors[i%colors.length];
+            context.strokeStyle=cur_color;
+            context.fillStyle = cur_color;
+            var i_pos = start+(drawspeed*timestamps[i][0]);
+            var j_pos = start+(drawspeed*timestamps[i][1]);
+            context.moveTo(i_pos,v_pos+cumulative_space);
+            context.lineTo(i_pos,v_pos+cumulative_space+stroke_size);
+            context.lineTo(i_pos,v_pos+cumulative_space-stroke_size);
+            context.moveTo(i_pos,v_pos+cumulative_space);
+            context.lineTo(j_pos,v_pos+cumulative_space);
+            context.moveTo(j_pos,v_pos+cumulative_space);
+            context.lineTo(j_pos,v_pos+cumulative_space+stroke_size);
+            context.lineTo(j_pos,v_pos+cumulative_space-stroke_size);
+            context.fillText(i+1, start+((timestamps[i][0]+((timestamps[i][1]-timestamps[i][0])/2))/duration)*(end-start), v_pos+cumulative_space+stroke_size+5);
+            context.stroke();
+            context.closePath();
+            cumulative_space = cumulative_space + 20;
+          }
+        }
+      }
+    })
+
+</script>
