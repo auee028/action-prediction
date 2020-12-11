@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+import argparse
 import matplotlib.pyplot as plt
 
 with open('action_map.txt', 'r') as f:
@@ -44,7 +45,7 @@ def build(n_actions, n_hidden, dropout, learning_rate):
     action_list_labels = tf.placeholder(dtype=tf.int32, shape=[None,None], name='action_list_labels')
     next_action_labels = tf.placeholder(dtype=tf.int32, shape=[None], name='next_action_labels')
 
-    action_one_hot = tf.one_hot(action_list_labels, n_actions)
+    action_one_hot = tf.one_hot(action_list_labels, n_actions + 1)
     embedding_action = tf.get_variable('embedding_action', shape=[n_actions + 1, n_hidden])
 
     with tf.variable_scope('ActionLSTM'):
@@ -60,6 +61,7 @@ def build(n_actions, n_hidden, dropout, learning_rate):
         #                                     dtype=tf.float32)
 
         lstm_cell = tf.nn.rnn_cell.LSTMCell(n_hidden)
+        lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=dropout)
         lstm_outputs, lstm_states = tf.nn.dynamic_rnn(cell=lstm_cell,
                                             inputs=action_one_hot,
                                             dtype=tf.float32)
@@ -136,13 +138,16 @@ def train(data_path, batch_size):
                 print('epoch : {}, loss: {}, acc : {}'.format(epoch, loss, acc))
                 # print('step : {}, loss: {}, acc : {}'.format(m['global_step'].eval(sess), loss, acc))
 
-                with open('train_seq.txt', 'a') as f:
+                with open('result_lstm_{}.txt'.format(args.which), 'a') as f:
                     f.write('epoch : {}, loss: {}, acc : {}\n'.format(epoch, loss, acc))
 
                 # print('saving ckpt...')
-                saver.save(sess, save_path='./actionseq_model/model-{}.ckpt'.format(epoch))
+                # saver.save(sess, save_path='./actionseq_model/model-{}.ckpt'.format(epoch))
+                if not os.path.exists(os.path.join(args.save_root, 'lstm_{}'.format(args.which))):
+                    os.makedirs(os.path.join(args.save_root, 'lstm_{}'.format(args.which)))
+                saver.save(sess, save_path=os.path.join(args.save_root, 'lstm_{}'.format(args.which), 'model-{}.ckpt'.format(epoch)))
 
-            if epoch == 25:
+            if epoch == args.epochs:
                 break
 
 
@@ -152,25 +157,37 @@ def train(data_path, batch_size):
     # plt.plot(range(len(history['loss'])), history['loss'], 'r',
     #          range(len(history['acc'])), history['acc'], 'b')
 
-    plt.subplot(2, 1, 1)  # nrows=2, ncols=1, index=1
-    plt.plot(range(len(history['loss'])), history['loss'], 'o-')
+    # plt.subplot(2, 1, 1)  # nrows=2, ncols=1, index=1
+    plt.plot(range(len(history['loss'])), history['loss'], 'r')#, 'o-')
     plt.title('Training LSTM')
     plt.ylabel('loss')
 
-    plt.subplot(2, 1, 2)  # nrows=2, ncols=1, index=2
-    plt.plot(range(len(history['acc'])), history['acc'], 'o-')
+    plt.savefig('train_seq-loss.png')
+    plt.show()
+
+    # plt.subplot(2, 1, 2)  # nrows=2, ncols=1, index=2
+    plt.plot(range(len(history['acc'])), history['acc'], 'b')#, 'o-')
     plt.xlabel('epoch')
     plt.ylabel('acc.')
 
-    plt.savefig('train_seq.png')
+    plt.savefig('train_seq-acc.png')
     plt.show()
 
 
 
 if __name__=="__main__":
-    data_path = 'actionseq_dataset.txt'
+    parser = argparse.ArgumentParser()
 
-    with open(data_path, 'r') as f:
+    parser.add_argument('--save_root', type=str, default="save_model")
+    parser.add_argument('--which', type=str, default="ABR-action")
+    parser.add_argument('--data_text_path', type=str, default="actionseq_dataset.txt")
+
+    parser.add_argument('--epochs', type=int, default=20)
+
+    args = parser.parse_args()
+
+    with open(args.data_text_path, 'r') as f:
         data_len = len(f.readlines())
 
-    train(data_path=data_path, batch_size=data_len)
+    train(data_path=args.data_text_path, batch_size=data_len)
+

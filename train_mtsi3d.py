@@ -2,36 +2,45 @@ import tensorflow as tf
 import numpy as np
 import os
 import math
-import re
 
 import model_zoo_train as model_zoo
 import support_function as sf
 
+import datetime
+
+
+now = datetime.datetime.now()
+nowDatetime = now.strftime('%Y-%m-%d_%H-%M-%S')
 
 print(tf.__version__)
 
-from tensorflow.python import debug as tf_debug
 
 # configuration
-# example: --which=jester --video_root_path=/home/wonhee/2-dataset --batch_size=8
-tf.app.flags.DEFINE_integer("batch_size", 2, "batch size") # 8
+# example: --which=action --video_root_path=/home/user/dataset --batch_size=4
+tf.app.flags.DEFINE_integer("batch_size", 4, "batch size")
 tf.app.flags.DEFINE_float("learning_rate", 1e-4, "learning rate")
 
 tf.app.flags.DEFINE_integer("k_fold", 5, "data ratio")
-tf.app.flags.DEFINE_bool("enable_k_fold", True, "enable k fold")
+tf.app.flags.DEFINE_bool("enable_k_fold", False, "enable k fold")
 
-tf.app.flags.DEFINE_string("model", 'mtsi3d', "which model to use")      # resnetl10/i3d/mtsi3d
-tf.app.flags.DEFINE_string("mode_pretrained", 'i3d', "which model to load")      # 'i3d' / 'mtsi3d'/ None
-tf.app.flags.DEFINE_string("pretrained_model_path", 'pretrained/i3d-tensorflow/kinetics-i3d/data/kinetics_i3d/model', "path of the pretrained model to load")
-# tf.app.flags.DEFINE_string("pretrained_model_path", '/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/save_model/i3d_ABR_action-finetune', "path of the pretrained model to load")
+# # (1) when loading i3d as pretrained model
+# tf.app.flags.DEFINE_string("mode_pretrained", 'i3d', "which model to load")      # 'i3d' / 'mtsi3d'/ None
+# tf.app.flags.DEFINE_string("pretrained_model_path", 'pretrained/i3d-tensorflow/kinetics-i3d/data/kinetics_i3d/model', "path of the pretrained model to load")
+# (2) when loading mtsi3d as pretrained model
+tf.app.flags.DEFINE_string("mode_pretrained", 'mtsi3d', "which model to load")      # 'i3d' / 'mtsi3d'/ None
+tf.app.flags.DEFINE_string("pretrained_model_path", 'pretrained/mtsi3d', "path of the pretrained model to load")
 
-# tf.app.flags.DEFINE_string("video_root_path", '/media/pjh/HDD2/Dataset/STAIR-actions-master/STAIR_Actions_v1.1-25frames', "video root path")
-# tf.app.flags.DEFINE_string("video_root_path", ["/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug"], "video root path")
-tf.app.flags.DEFINE_string("video_root_path", "/media/pjh/HDD2/Dataset/ces-demo-4th/ABR_action-aug", "video root path")
-# tf.app.flags.DEFINE_string("which", 'STAIR', "which annotation to use")
-tf.app.flags.DEFINE_string("which", 'ABR_action_cropped-{}'.format(3), "which annotation to use")
+# pretrained/mtsi3d_ABR-action_finetune 's scope : v/SenseTime_I3D // after running this code, model var scope : v/MultiScale_I3D
+tf.app.flags.DEFINE_string("scope", 'v/SenseTime_I3D', 'scope name of pretrained mtsi3d model')     # v/SenseTime_I3D, v/MultiScale_I3D
 
-tf.app.flags.DEFINE_string("log_dir", '/home/pjh/PycharmProjects/action-prediction/tensorboard', 'loss log directory for tensorboard')
+tf.app.flags.DEFINE_string("video_root_path", "ceslea_videos_2020_cropped", "video root path")
+tf.app.flags.DEFINE_string("train_text_path", "annotation/trainlist_ABR-action.txt", "video root path")
+tf.app.flags.DEFINE_string("val_text_path", "annotation/vallist_ABR-action.txt", "video root path")
+
+tf.app.flags.DEFINE_string("save_root_path", './save_model', "save root path")
+tf.app.flags.DEFINE_string("which", 'ABR-action_{}'.format(nowDatetime), "which annotation to use")
+
+tf.app.flags.DEFINE_string("max_to_keep", 150, "number of checkpoints to save")
 
 tf.app.flags.DEFINE_string("gpu", '0', 'which gpu to use')
 
@@ -41,51 +50,31 @@ FLAGS = tf.app.flags.FLAGS
 
 os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.gpu
 
-from tensorflow.python.client import device_lib
+# from tensorflow.python.client import device_lib
 # print(device_lib.list_local_devices())
 
-video_root_path = FLAGS.video_root_path # os.path.join(FLAGS.video_root_path, FLAGS.which)
+video_root_path = FLAGS.video_root_path
 
 batch_size = FLAGS.batch_size
 k_fold = FLAGS.k_fold
-# learning_rate = FLAGS.learning_rate
-
-model = FLAGS.model
 
 cwd = os.getcwd()
 
-"""
-# model_path = os.path.join(cwd, 'save_model', FLAGS.model+'-'+FLAGS.which+'-finetune')
-model_root = '/media/pjh/HDD2/Dataset/i3d_STAIR'
-model_path = os.path.join(model_root, 'save_model', FLAGS.model+'-'+FLAGS.which+'-finetune')
-print('model_path: ', model_path)
-if not os.path.exists(model_path):
-    os.makedirs(model_path)
-"""
-# saved_path = '/media/pjh/HDD2/SourceCodes/wonhee-takeover/event_detector/save_model/i3d_ABR_action-finetune'
+saved_model_path = os.path.join(FLAGS.save_root_path, 'mtsi3d_'+FLAGS.which)
+print('model_path: '.format(saved_model_path))
+if not os.path.exists(saved_model_path):
+    os.makedirs(saved_model_path)
 
-# model_path = '/media/pjh/HDD2/Dataset/save_model/i3d-STAIR-finetune'
-model_root = '/media/pjh/HDD2/Dataset'
-model_path = os.path.join(model_root, 'save_model', FLAGS.model+'-'+FLAGS.which)
-print('model_path: ', model_path)
-if not os.path.exists(model_path):
-    os.makedirs(model_path)
-
-loss_path = os.path.join(cwd, 'analysis', 'loss-{}.txt'.format(FLAGS.model+'-'+FLAGS.which))
-accuracy_path = os.path.join(cwd, 'analysis', 'accuracy-{}.txt'.format(FLAGS.model+'-'+FLAGS.which))
+loss_path = os.path.join(cwd, 'analysis', 'loss-{}.txt'.format('mtsi3d_'+FLAGS.which))
+accuracy_path = os.path.join(cwd, 'analysis', 'accuracy-{}.txt'.format('mtsi3d_'+FLAGS.which))
 if not os.path.exists(os.path.join(cwd, 'analysis')):
     os.makedirs(os.path.join(cwd, 'analysis'))
 
 ############################# k-fold ###########################################
 #### load train + validation video
 if FLAGS.enable_k_fold:
-    # train_text_path = os.path.join(cwd, 'annotation/trainlist-{}.txt'.format(FLAGS.which))
-    # print(train_text_path, video_root_path)
-    # train_text_path = ["annotation/trainlist-ABR_action.txt", "annotation/trainlist-ABR_action-aug.txt"]
-    train_text_path = "annotation/trainlist-ABR_action-aug.txt"
-
-    videos, intention_data, n_class = sf.get_HRI(video_root_path, train_text_path)
-    # videos, intention_data, n_class = sf.get_HRI_v2(video_root_path, train_text_path)
+    videos, intention_data, n_class = sf.get_HRI(video_root_path, FLAGS.train_text_path)
+    # videos, intention_data, n_class = sf.get_HRI_v2(video_root_path, FLAGS.train_text_path)
 
     # load and shuffle data
     index = np.arange(len(videos))
@@ -100,21 +89,14 @@ if FLAGS.enable_k_fold:
 
 #### load train video and validation
 else:
-    frame_path = video_root_path
-    # train_text_path = os.path.join(cwd, 'annotation/trainlist-{}.txt'.format(FLAGS.which))
-    # train_text_path = ["annotation/trainlist-ABR_action.txt", "annotation/trainlist-ABR_action-aug.txt"]
-    train_text_path = ["annotation/trainlist-ABR_action-aug.txt"]
-    # train_videos, train_intention_data, n_class = sf.get_HRI(frame_path, train_text_path)
-    train_videos, train_intention_data, n_class = sf.get_HRI_v2(frame_path, train_text_path)
+    train_videos, train_intention_data, n_class = sf.get_HRI(video_root_path, FLAGS.train_text_path)
+    # train_videos, train_intention_data, n_class = sf.get_HRI_v2(video_root_path, FLAGS.train_text_path)
 
     print('train_video:', FLAGS.which, len(train_videos))
     print('class:', n_class)
 
-    # valid_text_path = os.path.join(cwd, 'annotation/vallist-{}.txt'.format(FLAGS.which))
-    # valid_text_path = ["annotation/vallist-ABR_action.txt", "annotation/vallist-ABR_action-aug.txt"]
-    valid_text_path = ["annotation/vallist-ABR_action-aug.txt"]
-    # valid_videos, valid_intention_data, _ = sf.get_HRI(frame_path, valid_text_path)
-    valid_videos, valid_intention_data, _ = sf.get_HRI_v2(frame_path, valid_text_path)
+    valid_videos, valid_intention_data, _ = sf.get_HRI(video_root_path, FLAGS.val_text_path)
+    # valid_videos, valid_intention_data, _ = sf.get_HRI_v2(video_root_path, FLAGS.val_text_path)
 
     print('valid_video:', FLAGS.which, len(valid_videos))
 
@@ -128,27 +110,16 @@ is_training = tf.placeholder(dtype=tf.bool)
 dropout_keep_prob = tf.placeholder(dtype=tf.float32)
 
 # build net
-if model == 'resnetl10':
-    net = model_zoo.ResNetl10Detector(inps=inputs, batch_size=batch_size, n_class=n_class, is_training=is_training,
-                           final_end_point='Logits', dropout_keep_prob=dropout_keep_prob,
-                           scope='v/ResNetl10', filters=[16, 16, 32, 64, 128], block_num=[1, 1, 1, 1])
-
-elif model == 'i3d':
-    net = model_zoo.I3DNet(inps=inputs, n_class=n_class, batch_size=batch_size,
-                           pretrained_model_path='pretrained/i3d-tensorflow/kinetics-i3d/data/kinetics_i3d/model',
-                           final_end_point='Logits', dropout_keep_prob=dropout_keep_prob,
-                           is_training=is_training, scope='v/SenseTime_I3D')
-
-elif model == 'mtsi3d':
-    net = model_zoo.multiscaleI3DNet(inps=inputs, n_class=n_class, batch_size=batch_size,
+net = model_zoo.multiscaleI3DNet(inps=inputs, n_class=n_class, batch_size=batch_size,
                            pretrained_model_path=FLAGS.pretrained_model_path,
                            final_end_point='Logits', dropout_keep_prob=dropout_keep_prob,
-                           is_training=is_training, scope='v/SenseTime_I3D')
-
-else:
-    raise NameError('can not find the model')
+                           is_training=is_training, scope=FLAGS.scope)
 
 logits = net(inps=inputs)
+
+# Make saver at the end of weights to save - not to save useless variables after the model
+# saver = tf.train.Saver(max_to_keep=20)
+saver = tf.train.Saver(max_to_keep=FLAGS.max_to_keep)      # max_to_keep default value is 5
 
 # loss
 one_hot_targets = tf.one_hot(targets, n_class, dtype='float32')
@@ -156,8 +127,6 @@ crossent = tf.nn.softmax_cross_entropy_with_logits(labels=tf.one_hot(targets, n_
                                                    logits=logits)
 
 loss = tf.reduce_mean(crossent)
-
-tf.summary.scalar('loss', loss)
 
 # accuracy
 correct_prediction = tf.equal(tf.cast(tf.argmax(logits, 1), tf.int32), targets)
@@ -185,7 +154,6 @@ with tf.control_dependencies(update_ops):
 config = tf.ConfigProto(log_device_placement=False)
 config.gpu_options.allow_growth = True
 
-summary = tf.summary.merge_all()
 
 # batching and train #
 
@@ -196,10 +164,6 @@ if hasattr(net, 'assign_ops'):
     # init all variables with pre-trained i3d
     sess.run(net.assign_ops)
 
-# saver = tf.train.Saver(max_to_keep=20)
-saver = tf.train.Saver(max_to_keep=150)      # max_to_keep default value is 5
-
-summary_writer = tf.summary.FileWriter(FLAGS.log_dir, sess.graph)
 
 if FLAGS.mode_pretrained == 'mtsi3d':
     ckpt = tf.train.latest_checkpoint(FLAGS.pretrained_model_path)
@@ -207,10 +171,8 @@ if FLAGS.mode_pretrained == 'mtsi3d':
     if ckpt:
         print( 'restore from {}...'.format(ckpt))
         saver.restore(sess, ckpt)
-elif FLAGS.mode_pretrained == 'i3d':
-    # variables = tf.contrib.slim.get_variables_to_restore()
-    # print(variables)
 
+elif FLAGS.mode_pretrained == 'i3d':
     variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='v/SenseTime_I3D')
 
     # variables_to_restore = []
@@ -225,18 +187,18 @@ elif FLAGS.mode_pretrained == 'i3d':
 
     variables_to_restore = []
     ckpt_vars = [name for name, shape in tf.train.list_variables(FLAGS.pretrained_model_path)]
-    # print(ckpt_vars[:3])
     for v in variables:
         if (v.name.split(':')[0] not in ckpt_vars) | (v.name.startswith('v/SenseTime_I3D/Logits')):
-            # print(v.name)
             continue
-        # print(v)
         variables_to_restore.append(v)
 
     if variables_to_restore:
         print('restore from {}...'.format(FLAGS.pretrained_model_path))
         saver_pretrained = tf.train.Saver(variables_to_restore)
         saver_pretrained.restore(sess, FLAGS.pretrained_model_path)
+
+else:
+    pass
 
 # start = -1 if not ckpt else int(os.path.basename(ckpt).split('-')[-1])
 start = -1
@@ -245,7 +207,6 @@ epochs = 120
 crossval_flag = 0
 prev_acc = 0
 
-tboard_cnt = 0      # tensorboard step
 for epoch in range(start+1, epochs):
     index = np.arange(len(train_videos))
     np.random.shuffle(index)
@@ -259,6 +220,7 @@ for epoch in range(start+1, epochs):
             print("start batch: {}, end batch: {}".format(start, end))
             continue
         train_frames = sf.preprocess_frame(train_videos[start:end])
+        # print(train_paths[start:end])
         if train_frames.shape[1] != 64:
             print(train_frames.shape, train_paths[start:end])
         train_intention = train_intention_data[start:end]
@@ -268,14 +230,9 @@ for epoch in range(start+1, epochs):
                     is_training: True,
                     dropout_keep_prob: 0.5}
 
-        # _, loss_value, acc, lr = sess.run([optimizer, loss, accuracy, learning_rate], feed_dict=feed_dic)
-        _, loss_value, acc, lr, summary_str = sess.run([optimizer, loss, accuracy, learning_rate, summary], feed_dict=feed_dic)
+        _, loss_value, acc, lr = sess.run([optimizer, loss, accuracy, learning_rate], feed_dict=feed_dic)
 
         local_step = start / batch_size
-        if local_step % 100 == 0:
-            tboard_cnt += 1
-            summary_writer.add_summary(summary_str, tboard_cnt)
-            summary_writer.flush()
 
         train_acc += acc
 
@@ -292,7 +249,7 @@ for epoch in range(start+1, epochs):
         txt.write('train: epoch : %d, lr : %.8f, loss : %f, accuracy : %f \n' % (epoch, lr, loss_value, train_acc))
 
     print("Epoch ", epoch, " is finished. I'm going to save the model ...")
-    saver.save(sess, os.path.join(model_path, 'step'), global_step=epoch)
+    saver.save(sess, os.path.join(saved_model_path, 'step'), global_step=epoch)
 
     print('validation is being processed')
     val_acc = 0
