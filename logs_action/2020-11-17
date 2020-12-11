@@ -1,0 +1,44 @@
+---user020---
+2020-11-17_09-48-44 | result: reading | confidence: 0.911850631237
+---user020---
+---user021---
+2020-11-17_10-04-27 | result: drinking | confidence: 0.996431589127
+2020-11-17_10-04-45 | result: brushing | confidence: 0.744191348553
+---user021---
+2020-11-17_10-08-28 | result: brushing | confidence: 0.999108970165
+---user021---
+---user022---
+2020-11-17_10-37-16 | result: brushing | confidence: 0.999811470509
+2020-11-17_10-37-34 | result: drinking | confidence: 0.744785189629
+---user023---
+2020-11-17_11-16-36 | result: waving hands | confidence: 1.0
+---user024---
+2020-11-17_11-39-03 | result: reading | confidence: 0.999954104424
+---user025---
+2020-11-17_13-08-56 | result: brushing | confidence: 0.999643087387
+2020-11-17_13-09-14 | result: brushing | confidence: 0.999073624611
+2020-11-17_13-09-31 | result: brushing | confidence: 0.998964548111
+2020-11-17_13-09-49 | result: brushing | confidence: 0.993313610554
+---user025---
+2020-11-17_13-11-05 | result: brushing | confidence: 0.990521669388
+---user026---
+2020-11-17_13-43-19 | result: reading | confidence: 0.86185669899
+---user028---
+2020-11-17_14-36-25 | result: stretching arm | confidence: 0.993773281574
+---user028---
+---user028---
+2020-11-17_14-40-05 | result: drinking | confidence: 0.992803990841
+---user031---
+2020-11-17_16-04-46 | result: stretching arm | confidence: 0.999418377876
+---user032---
+2020-11-17_16-45-51 | result: waving hands | confidence: 0.986655235291
+---user033---
+2020-11-17_17-04-55 | result: brushing | confidence: 0.999751865864
+---user033---
+2020-11-17_17-08-23 | result: waving hands | confidence: 0.999999880791
+---user034---
+2020-11-17_17-39-09 | result: reading | confidence: 0.989145219326
+---user035---
+2020-11-17_18-11-39 | result: reading | confidence: 0.992771446705
+---user036---
+2020-11-17_18-33-19 | result: waving hands | confidence: 0.99851256609
