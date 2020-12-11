@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 import pickle
 import random
-import time
-from natsort import natsorted
 
 
 def get_frames(videos, n_frames, channel = 0):

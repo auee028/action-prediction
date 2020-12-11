@@ -53,7 +53,7 @@ def _2dcnn(x, name):
 	return tf.stack(processed_inputs)
 
 # embedding for feat_1 (2d cnn)
-def embedding_feat_1(x, out_dim, name):
+def embedding_feat_1(x, out_dim, name, dropout_keep_prob=1.0):
 	_shape = tf.shape(x)
 	l, h, w = tf.unstack(_shape[1:-1])
 
@@ -99,15 +99,18 @@ def embedding_feat_1(x, out_dim, name):
 
 		with tf.variable_scope('fc_layers'):
 			# out = tf.layers.dense(out, 4096)
+			# out = tf.nn.dropout(out, dropout_keep_prob)
 			out = tf.layers.dense(out, 2048)
+			# out = tf.nn.dropout(out, dropout_keep_prob)
 			out = tf.layers.dense(out, 1000)
+			out = tf.nn.dropout(out, dropout_keep_prob)
 			# out = tf.layers.dense(out, 1000)
 			out = tf.layers.dense(out, out_dim)
 
 		return out
 
 # embedding for feat_2 (2d cnn)
-def embedding_feat_2(x, out_dim, name):
+def embedding_feat_2(x, out_dim, name, dropout_keep_prob=1.0):
 	_shape = tf.shape(x)
 	l, h, w = tf.unstack(_shape[1:-1])
 
@@ -145,15 +148,18 @@ def embedding_feat_2(x, out_dim, name):
 
 		with tf.variable_scope('fc_layers'):
 			# out = tf.layers.dense(out, 4096)
+			# out = tf.nn.dropout(out, dropout_keep_prob)
 			out = tf.layers.dense(out, 2048)
+			# out = tf.nn.dropout(out, dropout_keep_prob)
 			out = tf.layers.dense(out, 1000)
+			out = tf.nn.dropout(out, dropout_keep_prob)
 			# out = tf.layers.dense(out, 1000)
 			out = tf.layers.dense(out, out_dim)
 
 		return out
 
 # embedding for feat_3 (2d cnn)
-def embedding_feat_3(x, out_dim, name):
+def embedding_feat_3(x, out_dim, name, dropout_keep_prob=1.0):
 	_shape = tf.shape(x)
 	l, h, w = tf.unstack(_shape[1:-1])
 
@@ -199,7 +205,9 @@ def embedding_feat_3(x, out_dim, name):
 		out = tf.layers.flatten(out)
 
 		with tf.variable_scope('fc_layers'):
+			# out = tf.nn.dropout(out, dropout_keep_prob)
 			out = tf.layers.dense(out, 1000)
+			out = tf.nn.dropout(out, dropout_keep_prob)
 			# out = tf.layers.dense(out, 1000)
 			out = tf.layers.dense(out, out_dim)
 
@@ -224,6 +232,78 @@ def _dot_product(x1, x2):
 
 	y = tf.reduce_sum(tf.multiply(x1, x2), axis=1, keep_dims=True)  # shape : (batch_size, 1)
 	return y
+
+'''
+def FeatureEmbedding(inputs,
+					 num_classes=8,
+					 batch_size=4,
+					 final_endpoint='Predictions'):
+	end_points = {}
+
+	# hidden_feat_1
+	hidden_feat_1 = inputs[0]
+	hidden_feat_1.set_shape((batch_size, 32, 28, 28, 192))
+	with tf.variable_scope('EmbeddingFeats'):
+		embedding_1 = embedding_feat_1(hidden_feat_1, num_classes, name='Embedding_feat_1')
+
+	# hidden_feat_2
+	hidden_feat_2 = inputs[1]
+	hidden_feat_2.set_shape((batch_size, 16, 14, 14, 480))
+	with tf.variable_scope('EmbeddingFeats'):
+		embedding_2 = embedding_feat_2(hidden_feat_2, num_classes, name='Embedding_feat_2')
+
+	# hidden_feat_3
+	hidden_feat_3 = inputs[2]
+	hidden_feat_3.set_shape((batch_size, 8, 7, 7, 832))
+	with tf.variable_scope('EmbeddingFeats'):
+		embedding_3 = embedding_feat_3(hidden_feat_3, num_classes, name='Embedding_feat_3')
+
+	# last logits
+	averaged_logits = inputs[3]
+
+	# dot product
+	similarity_score_1 = _dot_product(averaged_logits, embedding_1)
+	similarity_score_2 = _dot_product(averaged_logits, embedding_2)
+	similarity_score_3 = _dot_product(averaged_logits, embedding_3)
+
+	similarity_scores = tf.concat([similarity_score_1, similarity_score_2, similarity_score_3], axis=1)
+	attn_distribs = tf.nn.softmax(similarity_scores, dim=1)
+
+	_shape = tf.shape(attn_distribs)
+	_, num_embs = tf.unstack(_shape)
+
+	embs = tf.stack([embedding_1, embedding_2, embedding_3], axis=0)
+
+	def body(t, seq_weighted_emb):
+		embedding = embs[t]
+		emb_weight = tf.gather(attn_distribs, t, axis=1)
+		weighted_emb = tf.add(tf.expand_dims(emb_weight, axis=1), embedding)
+
+		seq_weighted_emb = seq_weighted_emb.write(t, weighted_emb)
+
+		return t + 1, seq_weighted_emb
+
+	t = tf.constant(0)
+	seq_weighted_emb = tf.TensorArray(dtype=tf.float32, size=num_embs)
+
+	_, seq_weighted_emb = tf.while_loop(cond=lambda t, *_: t < num_embs,
+										body=body, loop_vars=(t, seq_weighted_emb))
+
+	# processed_weighted_embs.append(seq_weighted_emb.stack())
+	#
+	# attn_value = tf.reduce_sum(tf.concat(processed_weighted_embs, axis=0), axis=1)
+	attn_value = tf.reduce_sum(seq_weighted_emb.stack(), axis=0)
+
+	end_point = 'Logits'
+	logits = tf.layers.dense(tf.concat([attn_value, averaged_logits], axis=1), num_classes)
+	end_points[end_point] = logits
+	if end_point == final_endpoint: return logits, end_points  # , [hidden_feat_1, hidden_feat_2, hidden_feat_3]
+
+	end_point = 'Predictions'
+	predictions = tf.nn.softmax(averaged_logits)
+	end_points[end_point] = predictions
+	if end_point == final_endpoint: return predictions, end_points
+'''
 
 
 def MultiscaleI3D(inputs,
@@ -603,7 +683,7 @@ def MultiscaleI3D(inputs,
 		logits = tf.layers.dense(tf.concat([attn_value, averaged_logits], axis=1), num_classes)
 
 		end_points[end_point] = logits
-		if end_point == final_endpoint: return logits, end_points#, [hidden_feat_1, hidden_feat_2, hidden_feat_3]
+		if end_point == final_endpoint: return logits, end_points#, averaged_logits#, [hidden_feat_1, hidden_feat_2, hidden_feat_3]
 
 		if final_endpoint == 'SequatialLogits': return squatial_logits, end_points
 
@@ -618,11 +698,15 @@ def MultiscaleI3D(inputs,
 if __name__ == '__main__':
 	# inputs: [batch_size, num_frames, h, w, c], outputs: [batch_size, dim_features]
 	inps = tf.placeholder(dtype=tf.float32, shape=[3, 64, 224, 224, 3])
-	si3d, _, hiddens = MultiscaleI3D(inps, num_classes=15, batch_size=3,
+	si3d, hiddens = MultiscaleI3D(inps, num_classes=15, batch_size=3,
 								   final_endpoint='Logits', scope='v/SenseTime_I3D',
 								   dropout_keep_prob=0.5, is_training=True)
+	# si3d, hiddens, logits = MultiscaleI3D(inps, num_classes=15, batch_size=3,
+	# 							   final_endpoint='Logits', scope='v/SenseTime_I3D',
+	# 							   dropout_keep_prob=0.5, is_training=True)
 	print(si3d)  # (4, 15)
 	print(hiddens)
+	# print(logits)
 
 	# tvar = tf.trainable_variables()
 	# for i in tvar:
