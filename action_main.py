@@ -79,6 +79,8 @@ if __name__ == '__main__':
                         default=480)  # DEPTH : 1280x720, 848x480, 640x480, 640x360, 480x270, 424x240
     parser.add_argument('--fps', type=int, default=10)  # 6, 15(1920~424), 30(1280~320), 60
     parser.add_argument('--name', type=str, default="user")
+
+    parser.add_argument('--mtsi3d_weights', type=str, default="mtsi3d")
     
     args = parser.parse_args()
 
@@ -90,7 +92,7 @@ if __name__ == '__main__':
     with open(log_file, 'a') as f:
         f.write("---{}---\n".format(args.name))
 
-    action_model = MultiscaleI3D()
+    action_model = MultiscaleI3D(args.mtsi3d_weights)
 
     cap = cv2.VideoCapture(args.cam)
 
@@ -164,20 +166,5 @@ if __name__ == '__main__':
     cv2.destroyAllWindows()
 
 
-    """
-    # get RNN result
-    # input : action_list
-    # output : predicted last action
-    
-    """
-
-    # try:
-    #     # requests.post('http://155.230.24.109:50001/api/v1/actions/action/{}/{}'.format('home',action_list[-1]))
-    #     requests.get(
-    #         'http://192.168.0.4:3001/api/v1/actions/action/{}/{}'.format('home', action_list[-1]))
-    #     # requests.post('http://ceslea.ml:50001/api/v1/actions/action/{}/{}'.format('home',action_list[-1]))
-    #     print('send action')
-    # except:
-    #     pass
 
 

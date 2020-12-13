@@ -19,8 +19,8 @@ with open('categories.txt') as f:
 ix2label = dict(zip(range(len(lines)), lines))
 
 class MultiscaleI3D:
-    def __init__(self):
-        self.model_path = os.path.join('save_model', 'mtsi3d')
+    def __init__(self, model_name='mtsi3d'):
+        self.model_path = os.path.join('save_model', model_name)
 
         self.inputs = tf.placeholder(dtype=tf.float32, shape=[None, 64, 224, 224, 3])
         self.is_training = tf.placeholder(dtype=tf.bool)
@@ -82,8 +82,8 @@ class MultiscaleI3D:
 
 
 class LSTM:
-    def __init__(self):
-        self.model_path = os.path.join('save_model', 'lstm')
+    def __init__(self, model_name='lstm'):
+        self.model_path = os.path.join('save_model', model_name)
         self.n_actions = 15
         self.n_hidden = 128
 

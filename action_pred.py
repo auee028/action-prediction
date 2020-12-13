@@ -78,7 +78,10 @@ if __name__ == '__main__':
                         default=480)  # DEPTH : 1280x720, 848x480, 640x480, 640x360, 480x270, 424x240
     parser.add_argument('--fps', type=int, default=10)  # 6, 15(1920~424), 30(1280~320), 60
     parser.add_argument('--name', type=str, default="user")
-    
+
+    parser.add_argument('--mtsi3d_weights', type=str, default="mtsi3d")
+    parser.add_argument('--lstm_weights', type=str, default="lstm")
+
     args = parser.parse_args()
 
     log_dir = "./logs"
@@ -89,7 +92,7 @@ if __name__ == '__main__':
     with open(log_file, 'a') as f:
         f.write("---{}---\n".format(args.name))
 
-    action_model = MultiscaleI3D()
+    action_model = MultiscaleI3D(args.mtsi3d_weights)
 
     cap = cv2.VideoCapture(args.cam)
 
@@ -163,7 +166,7 @@ if __name__ == '__main__':
     
     """
     tf.reset_default_graph()
-    seq_model = LSTM()
+    seq_model = LSTM(args.lstm_weights)
 
     next_action = ""
 
