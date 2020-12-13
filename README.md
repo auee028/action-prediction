@@ -33,15 +33,13 @@ working
 coming
 leaving
 talking on the phone
-stretching
+stretching arm
 nodding off
 reading 
 blowing nose
 
 ```
-* You should locate training and validation video list files under 'annotation/' folder<br>
-  (trainlist-ABR.txt, vallist-ABR.txt)
-
+* You should locate training and validation video list files(trainlist-ABR.txt, vallist-ABR.txt) under 'annotation/' folder
 
 ## Requirements
 
@@ -70,12 +68,12 @@ make
 ```
 
 ## Training/Validation
-1. training mtsi3d with pretrained i3d weights
+1. when training mtsi3d with pretrained i3d weights
 ```
 python train_mtsi3d.py --mode_pretrained=i3d --pretrained_model_path=pretrained/i3d-tensorflow/kinetics-i3d/data/kinetics_i3d/model --scope=v/SenseTime_I3D
 ```
 
-2. training mtsi3d with pretrained(or paused) mtsi3d weights
+2. when training mtsi3d with pretrained(or paused) mtsi3d weights
 ```
 python train_mtsi3d.py --mode_pretrained=mtsi3d --pretrained_model_path=pretrained/mtsi3d_ABR-action_finetune --scope=v/SenseTime_I3D
 ```
@@ -86,9 +84,14 @@ python train_mtsi3d.py --mode_pretrained=mtsi3d --pretrained_model_path=_your mo
 * If you set cross-validation as True, only train_text_path is used for training.
 * If you set cross-validation as False, both train_text_path and val_text_path are used for training.
 
-3. check for loss and accuracy saved at ./analysis/ (default)
+3. when training lstm
+```
+python train_lstm.py --data_text_path=actioinsq_dataset.txt
+```
 
-4. check for trained model at ./save_model (default)
+4. check files of loss and accuracy saved at ./analysis/
+
+5. check files of trained model saved at ./save_model
 
 
 ## Test(including real-time) ==> for more details, see HOWtoUSE.md

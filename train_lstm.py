@@ -158,11 +158,13 @@ def train(data_path, batch_size):
     #          range(len(history['acc'])), history['acc'], 'b')
 
     # plt.subplot(2, 1, 1)  # nrows=2, ncols=1, index=1
+    if not os.path.exists('./analysis/'):
+        os.makedirs('./analysis/')
     plt.plot(range(len(history['loss'])), history['loss'], 'r')#, 'o-')
     plt.title('Training LSTM')
     plt.ylabel('loss')
 
-    plt.savefig('train_seq-loss.png')
+    plt.savefig('analysis/train_seq-loss.png')
     plt.show()
 
     # plt.subplot(2, 1, 2)  # nrows=2, ncols=1, index=2
@@ -170,7 +172,7 @@ def train(data_path, batch_size):
     plt.xlabel('epoch')
     plt.ylabel('acc.')
 
-    plt.savefig('train_seq-acc.png')
+    plt.savefig('analysis/train_seq-acc.png')
     plt.show()
 
 
