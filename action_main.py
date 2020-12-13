@@ -13,7 +13,7 @@ import time
 import argparse
 
 # from crop_frames import CropFrames
-from main_action_recognition_frontPerson import CropFrames
+from crop_frames_frontPerson import CropFrames
 from TFModel import MultiscaleI3D
 
 import requests

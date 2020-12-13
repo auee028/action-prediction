@@ -14,7 +14,7 @@ import requests
 import tensorflow as tf
 
 # from crop_frames import CropFrames
-from main_action_recognition_frontPerson import CropFrames
+from crop_frames_frontPerson import CropFrames
 from TFModel import MultiscaleI3D, LSTM
 
 from darknet.python.darknet import *
