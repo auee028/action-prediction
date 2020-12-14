@@ -133,13 +133,15 @@ if __name__ == '__main__':
             cv2.imwrite('tmp/img.jpg', cropped_frames[0])
 
             result, confidence, top_3 = pred_action(cropped_frames)
-            print("{}, {}, {}\n".format(result, confidence, top_3))
+            # print("{}, {}, {}\n".format(result, confidence, top_3))
                             
             if result == None:
                 result = 'Waiting...'
 
             if not result == 'Waiting...':
                 action_list.append(result)
+
+                print("{}, {}, {}\n".format(result, confidence, top_3))
 
             requests.get('http://127.0.0.1:5001/state/set/action', params={'action': result})
 
