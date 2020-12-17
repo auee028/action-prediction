@@ -5,8 +5,6 @@ import tensorflow as tf
 
 from stn import spatial_transformer_network as transformer
 
-from resnet3d import ResNet
-
 import i3d_multiscale as mtsi3d
 
 
@@ -142,32 +140,6 @@ class I3DNet:
         out, _ = i3d.I3D(preprocess(inps, self.batch_size,self.is_training), num_classes=self.n_class,
                         final_endpoint=self.final_end_point, scope=self.scope,
                         dropout_keep_prob=self.dropout_keep_prob, is_training=self.is_training, reuse=True)
-
-        return out
-
-
-class ResNetl10Detector:
-    def __init__(self, inps, n_class, batch_size,
-                 final_end_point, dropout_keep_prob,
-                 is_training, filters, block_num, scope='v/ResNetl10'):
-
-        self.final_end_point = final_end_point
-        self.n_class = n_class
-        self.batch_size = batch_size
-        self.dropout_keep_prob = dropout_keep_prob
-        self.is_training = is_training
-        self.scope = scope
-        self.filters = filters
-        self.block_num = block_num
-        self.inps = inps
-
-    def __call__(self, inps):
-        resnet = ResNet(preprocess(inps, self.batch_size, self.is_training), num_classes=self.n_class,
-                                 final_endpoint=self.final_end_point, scope=self.scope,
-                                 dropout_keep_prob=self.dropout_keep_prob, is_training=self.is_training,
-                                 filters=self.filters, block_num=self.block_num)
-
-        out, _ = resnet._build_model()
 
         return out
 
