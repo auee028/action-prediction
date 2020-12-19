@@ -82,9 +82,9 @@ class MultiscaleI3D:
 
 
 class LSTM:
-    def __init__(self, model_name='lstm'):
+    def __init__(self, model_name='lstm', num_actions=15):
         self.model_path = os.path.join('save_model', model_name)
-        self.n_actions = 15
+        self.n_actions = num_actions
         self.n_hidden = 128
 
         self.inputs = tf.placeholder(dtype=tf.int32, shape=[None, None])
