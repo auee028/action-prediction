@@ -13,7 +13,8 @@ import os
 import requests
 
 
-with open('categories.txt') as f:
+with open('coarse_action_map.txt', 'r') as f:
+#with open('categories.txt') as f:
     lines = map(lambda x: x.strip(), f.readlines())
 
 ix2label = dict(zip(range(len(lines)), lines))
@@ -82,10 +83,10 @@ class MultiscaleI3D:
 
 
 class LSTM:
-    def __init__(self, model_name='lstm', num_actions=15):
+    def __init__(self, model_name='lstm', num_actions=15, num_hidden=128):
         self.model_path = os.path.join('save_model', model_name)
         self.n_actions = num_actions
-        self.n_hidden = 128
+        self.n_hidden = num_hidden
 
         self.inputs = tf.placeholder(dtype=tf.int32, shape=[None, None])
 
