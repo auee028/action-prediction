@@ -9,38 +9,6 @@
 pip install -r requirements.txt
 ```
 
-## ABR-actionDataset
-* saved in NAS (/homes/admin/Lab Dataset/action_data)
-```
-action_data/
-        |____ ABR_action-cropped          # videos cropped by part_detector
-        |____ ceslea_videos               # original videos collected in 2018?
-        |____ ceslea_videos_2020          # original videos collected in 2020.2(4th year of Ceslea)
-        |____ ceslea_videos_2020_cropped  # cropped frames of ceslea_videos_2020/ with crop_frames.py (used for training)
-```
-
-* 15 action classes
-```
-
-sitting
-standing
-drinking
-brushing
-playing uculele
-speaking
-waving hands
-working
-coming
-leaving
-talking on the phone
-stretching arm
-nodding off
-reading 
-blowing nose
-
-```
-* You should locate training and validation video list files(trainlist-ABR.txt, vallist-ABR.txt) under 'annotation/' folder
-
 ## Requirements
 
 ### Darknet
@@ -67,40 +35,45 @@ make
 
 ```
 
-## Training/Validation
-1. when training mtsi3d with pretrained i3d weights
+## Test
+1. export variables for CUDA 8.0 if it is needed
 ```
-python train_mtsi3d.py --mode_pretrained=i3d --pretrained_model_path=pretrained/i3d-tensorflow/kinetics-i3d/data/kinetics_i3d/model --scope=v/SenseTime_I3D
+$ export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:$LD_LIBRARY_PATH
+$ export PATH=/usr/local/cuda-8.0/bin:$PATH
+
+```
+2. Activate a virtual environment with Anaconda
+```
+$ conda activate action
+
+```
+3. First run the flask app
+```
+$ python action_app.py
+
+```
+4. Second run the main code 
+```
+$ python action_main.py
+
 ```
 
-2. when training mtsi3d with pretrained(or paused) mtsi3d weights
+If you want to get an action sequence and predict the next action, run the action_pred.py file instead of action_main.py 
 ```
-python train_mtsi3d.py --mode_pretrained=mtsi3d --pretrained_model_path=pretrained/mtsi3d_ABR-action_finetune --scope=v/SenseTime_I3D
-```
-or
-```
-python train_mtsi3d.py --mode_pretrained=mtsi3d --pretrained_model_path=_your model path_ --scope=v/MultiScale_I3D
-```
-* If you set cross-validation as True, only train_text_path is used for training.
-* If you set cross-validation as False, both train_text_path and val_text_path are used for training.
+$ python action_pred.py
 
-3. when training lstm
-```
-python train_lstm.py --data_text_path=actioinsq_dataset.txt
 ```
 
-4. check files of loss and accuracy saved at ./analysis/
 
-5. check files of trained model saved at ./save_model
+## NOTICE
+### Action list
+* drinking
+* brushing
+* waving hands
+* stretching arm
+* reading
 
+### Prediction list
+* reading-reading ==> stretching arm
+* reading-stretching arm ==> drinking
 
-## Test(including real-time) ==> for more details, see HOWtoUSE.md
-```
-python action_app.py
-python action_main.py
-```
-or
-```
-python action_app.py
-python action_pred.py
-```
