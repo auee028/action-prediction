@@ -17,7 +17,7 @@
 
 2. "action_pred.py" 에서 requests.post 및 requests.get 부분이 있는 라인에 아이피 주소 및 포트 번호 값을 지정합니다.
 
-3. save_model.zip[https://drive.google.com/file/d/1_gXZAU5kfqmAvjs0EAR1bA3s3IlvmMtQ/view?usp=sharing] 파일을 다운받아 상위 경로에 압축을 해제합니다.
+3. [save_model.zip](https://drive.google.com/file/d/1_gXZAU5kfqmAvjs0EAR1bA3s3IlvmMtQ/view?usp=sharing) 파일을 다운받아 상위 경로에 압축을 해제합니다.
 
 ## 사용법
 1. 사용자가 필요한 프로그램을 모두 실행한 것을 확인 후, python으로 "action_pred.py" 를 실행합니다. 
